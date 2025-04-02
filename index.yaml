@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   directus:
   - apiVersion: v2
+    appVersion: 11.6.1
+    created: "2025-04-02T15:19:53.788154569Z"
+    description: A Helm chart for directus
+    digest: 00ea762667b715a6cb7afacf7ed4bc4bbc9a302e9b6ab1cfbe50ce88e2970d97
+    name: directus
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/directus-0.1.9/directus-0.1.9.tgz
+    version: 0.1.9
+  - apiVersion: v2
     appVersion: 1.0.8
     created: "2024-10-09T07:45:13.298283651Z"
     description: A Helm chart for directus
@@ -102,4 +112,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/pocketbase-0.1.0/pocketbase-0.1.0.tgz
     version: 0.1.0
-generated: "2024-10-09T07:45:13.298329427Z"
+generated: "2025-04-02T15:19:53.788195947Z"
