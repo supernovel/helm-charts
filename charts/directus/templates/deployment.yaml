@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
       - name: directus
-        image: directus/directus
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
           - containerPort: 8055
         env:

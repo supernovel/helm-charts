@@ -1,6 +1,11 @@
 nameOverride: ""
 fullnameOverride: ""
 
+image:
+  repository: directus/directus
+  pullPolicy: IfNotPresent
+  tag: ""
+
 extraEnvVars: []
 
 ingress:
