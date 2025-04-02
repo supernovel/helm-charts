@@ -1,6 +1,8 @@
 nameOverride: ""
 fullnameOverride: ""
 
+extraEnvVars: []
+
 ingress:
   className: ""
   annotations: {}

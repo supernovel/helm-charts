@@ -56,6 +56,9 @@ spec:
             value: "info"
           - name: EXTENSIONS_AUTO_RELOAD
             value: "true"
+          {{- if .Values.extraEnvVars }}
+            {{- tpl (toYaml .Values.extraEnvVars) $ | nindent 10 }}
+          {{- end }}
         volumeMounts:
           - name: directus-data
             mountPath: /directus/database
