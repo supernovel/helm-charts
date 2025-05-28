@@ -11,7 +11,6 @@ secret:
     username: supabase
     password: this_password_is_insecure_and_should_be_updated
   db:
-    username: postgres
     password: example123456
     database: postgres
   analytics:
