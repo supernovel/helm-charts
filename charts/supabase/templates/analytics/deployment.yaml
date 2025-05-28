@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "supabase.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.analytics.replicaCount }}s
+  replicas: {{ .Values.analytics.replicaCount }}
   selector:
     matchLabels:
       {{- include "supabase.analytics.selectorLabels" . | nindent 6 }}
