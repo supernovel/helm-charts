@@ -6,9 +6,7 @@ metadata:
   labels:
     {{- include "supabase.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.realtime.autoscaling.enabled }}
   replicas: {{ .Values.realtime.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "supabase.realtime.selectorLabels" . | nindent 6 }}
@@ -115,6 +113,16 @@ spec:
                   {{- else }}
                   name: {{ include "supabase.secret.jwt" . }}
                   key: secret
+                  {{- end }}
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.secret.jwt.secretRef }}
+                  name: {{ .Values.secret.jwt.secretRef }}
+                  key: {{ .Values.secret.jwt.secretRefKey.cookieSignKey | default "cookieSignKey" }}
+                  {{- else }}
+                  name: {{ include "supabase.secret.jwt" . }}
+                  key: cookieSignKey
                   {{- end }}
           {{- with .Values.realtime.livenessProbe }}
           livenessProbe:

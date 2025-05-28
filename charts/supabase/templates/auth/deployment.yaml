@@ -6,9 +6,7 @@ metadata:
   labels:
     {{- include "supabase.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.auth.autoscaling.enabled }}
   replicas: {{ .Values.auth.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "supabase.auth.selectorLabels" . | nindent 6 }}

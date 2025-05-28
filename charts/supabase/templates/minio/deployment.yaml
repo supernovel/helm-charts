@@ -6,9 +6,7 @@ metadata:
   labels:
     {{- include "supabase.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.minio.autoscaling.enabled }}
   replicas: {{ .Values.minio.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "supabase.minio.selectorLabels" . | nindent 6 }}

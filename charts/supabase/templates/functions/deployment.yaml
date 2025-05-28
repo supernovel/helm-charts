@@ -6,9 +6,7 @@ metadata:
   labels:
     {{- include "supabase.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.functions.autoscaling.enabled }}
   replicas: {{ .Values.functions.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "supabase.functions.selectorLabels" . | nindent 6 }}
@@ -109,7 +107,11 @@ spec:
                   name: {{ include "supabase.secret.jwt" . }}
                   key: serviceKey
                   {{- end }}
-            - name: POSTGRES_BACKEND_URL
+            {{- if .Values.kong.enabled }}
+            - name: SUPABASE_URL
+              value: http://{{ include "supabase.kong.fullname" . }}:{{ .Values.kong.service.port }}
+            {{- end }}
+            - name: SUPABASE_DB_URL
               value: $(DB_DRIVER)://$(DB_USERNAME):$(DB_PASSWORD_ENC)@$(DB_HOSTNAME):$(DB_PORT)/$(DB_DATABASE)?search_path=auth&sslmode=$(DB_SSL)
           {{- with .Values.functions.livenessProbe }}
           livenessProbe:

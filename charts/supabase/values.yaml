@@ -21,6 +21,7 @@ secret:
     anonKey: ""
     serviceKey: ""
     secret: ""
+    cookieSignKey: ""
     # specify existing secret, which takes precedence over variables above
     secretRef: ""
     # override secret keys for existing secret refs
@@ -158,12 +159,6 @@ db:
     accessModes:
       - ReadWriteOnce
     class: ""
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -235,12 +230,6 @@ studio:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -336,12 +325,6 @@ auth:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -413,12 +396,6 @@ rest:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -466,12 +443,12 @@ realtime:
     DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
     DB_ENC_KEY: supabaserealtime
     PORT: "4000"
-    FLY_ALLOC_ID: fly123
-    FLY_APP_NAME: realtime
-    SECRET_KEY_BASE: UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq
     ERL_AFLAGS: -proto_dist inet_tcp
-    ENABLE_TAILSCALE: "false"
     DNS_NODES: "''"
+    RLIMIT_NOFILE: "10000"
+    APP_NAME: realtime
+    SEED_SELF_HOST: true
+    RUN_JANITOR: true
   # volumeMounts:
   #   - name: volume_name
   #     mountPath: /path/to/my/secret
@@ -494,12 +471,6 @@ realtime:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -569,12 +540,6 @@ meta:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -664,12 +629,6 @@ storage:
     accessModes:
       - ReadWriteOnce
     class: ""
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -744,12 +703,6 @@ imgproxy:
     accessModes:
       - ReadWriteOnce
     class: ""
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -839,12 +792,6 @@ kong:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -923,12 +870,6 @@ analytics:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -990,12 +931,6 @@ vector:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -1042,6 +977,7 @@ functions:
     DB_PORT: 5432
     DB_DRIVER: postgresql
     DB_SSL: disable  # disable, allow, prefer, require, verify-ca, verify-full
+    VERIFY_JWT: "false"
   # Mount user functions
   # volumeMounts:
   #   - name: my_functions
@@ -1065,12 +1001,6 @@ functions:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -1141,12 +1071,6 @@ minio:
     accessModes:
       - ReadWriteOnce
     class: ""
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
   nodeSelector: {}
   tolerations: []
   affinity: {}

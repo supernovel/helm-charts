@@ -3,6 +3,7 @@ secret:
     anonKey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
     serviceKey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q
     secret: your-super-secret-jwt-token-with-at-least-32-characters-long
+    cookieSignKey: your-super-secret-cookie-sign-key-with-at-least-64-characters-long
   smtp:
     username: your-mail@example.com
     password: example123456
@@ -19,7 +20,7 @@ secret:
 db:
   enabled: true
   image:
-    tag: 15.1.0.147
+    tag: 15.8.1.060
   livenessProbe:
     exec:
       command:
@@ -28,11 +29,13 @@ db:
         - postgres
     initialDelaySeconds: 3
   persistence:
-    enabled: false
+    enabled: true
+    storageClassName: "openebs-hostpath"
+    size: 50Gi
 
 studio:
   image:
-    tag: 20240326-5e5586d
+    tag: 2025.05.19-sha-3487831
   environment:
     STUDIO_DEFAULT_ORGANIZATION: "My Organization"
     STUDIO_DEFAULT_PROJECT: "My Project"
@@ -40,13 +43,13 @@ studio:
     NEXT_PUBLIC_ENABLE_LOGS: "true"
   livenessProbe:
     httpGet:
-      path: /api/profile
+      path: /api/platform/profile
       port: 3000
     initialDelaySeconds: 3
 
 auth:
   image:
-    tag: v2.143.0
+    tag: v2.172.1
   environment:
     API_EXTERNAL_URL: http://example.com
     GOTRUE_SITE_URL: http://example.com
@@ -56,14 +59,19 @@ auth:
     GOTRUE_SMTP_HOST: "smtp.example.com"
     GOTRUE_SMTP_PORT: "587"
     GOTRUE_SMTP_SENDER_NAME: "your-mail@example.com"
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 9999
+    initialDelaySeconds: 3
 
 rest:
   image:
-    tag: v12.0.1
+    tag: v12.2.12
 
 realtime:
   image:
-    tag: v2.27.5
+    tag: v2.34.47
   livenessProbe:
     httpGet:
       path: /
@@ -72,18 +80,20 @@ realtime:
 
 meta:
   image:
-    tag: v0.80.0
+    tag: v0.89.0
 
 storage:
   image:
-    tag: v0.46.4
+    tag: v1.22.17
   livenessProbe:
     httpGet:
       path: /status
       port: 5000
     initialDelaySeconds: 3
   persistence:
-    enabled: false
+    enabled: true
+    storageClassName: "openebs-hostpath"
+    size: 50Gi
 
 imgproxy:
   image:
@@ -97,15 +107,23 @@ imgproxy:
         - health
     initialDelaySeconds: 3
   persistence:
-    enabled: false
+    enabled: true
+    storageClassName: "openebs-hostpath"
+    size: 50Gi
 
 kong:
   image:
     repository: kong
     tag: 2.8.1
   environment:
+    KONG_DATABASE: "off"
     KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
     KONG_LOG_LEVEL: info
+    # https://github.com/supabase/cli/issues/14
+    KONG_DNS_ORDER: LAST,A,CNAME
+    KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+    KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+    KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
   ingress:
     enabled: true
     className: "nginx"
@@ -123,7 +141,9 @@ kong:
 
 analytics:
   image:
-    tag: 1.4.0
+    tag: 1.12.0
+  environment:
+    LOGFLARE_MIN_CLUSTER_SIZE: "1"
   livenessProbe:
     httpGet:
       path: /health
@@ -151,4 +171,7 @@ vector:
 
 functions:
   image:
-    tag: v1.41.2
+    tag: v1.67.4
+  environment:
+    VERIFY_JWT: "false"
+

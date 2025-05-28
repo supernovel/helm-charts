@@ -6,9 +6,7 @@ metadata:
   labels:
     {{- include "supabase.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.imgproxy.autoscaling.enabled }}
   replicas: {{ .Values.imgproxy.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "supabase.imgproxy.selectorLabels" . | nindent 6 }}
