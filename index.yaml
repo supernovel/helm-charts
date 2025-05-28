@@ -114,6 +114,16 @@ entries:
     version: 0.1.0
   supabase:
   - apiVersion: v2
+    created: "2025-05-28T07:26:15.922536794Z"
+    description: The open source Firebase alternative.
+    digest: 2838f38acae1130f28aa84f3da9a6f2dfbd93e73b10ac95c4db0df30fc182c56
+    icon: https://avatars.githubusercontent.com/u/54469796?s=280&v=4
+    name: supabase
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.7/supabase-0.1.7.tgz
+    version: 0.1.7
+  - apiVersion: v2
     created: "2025-05-28T05:52:13.978717676Z"
     description: The open source Firebase alternative.
     digest: a2bb6a41d4d007369a5dc201e401083e0f0285c7de697c4ae767764d3cf046c5
@@ -153,4 +163,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2025-05-28T05:52:13.978753353Z"
+generated: "2025-05-28T07:26:15.922581477Z"
