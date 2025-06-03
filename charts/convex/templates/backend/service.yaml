@@ -7,13 +7,9 @@ metadata:
 spec:
   type: {{ .Values.backend.service.type }}
   ports:
-    - port: {{ .Values.backend.service.api.port }}
+    - port: {{ .Values.backend.service.port }}
       targetPort: 3210
       protocol: TCP
       name: http
-    - port: {{ .Values.backend.service.actions.port }}
-      targetPort: 3211
-      protocol: TCP
-      name: http-actions
   selector:
     {{- include "convex.backend.selectorLabels" . | nindent 4 }}

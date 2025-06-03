@@ -36,9 +36,9 @@ spec:
               {{- toYaml . | nindent 12 }}
             {{- end }}
             - name: CONVEX_CLOUD_ORIGIN
-              value: https://{{ .Values.backend.ingress.hosts.api }}
+              value: https://{{ .Values.backend.ingress.hosts }}
             - name: CONVEX_SITE_ORIGIN
-              value: https://{{ .Values.backend.ingress.hosts.actions }}
+              value: https://{{ .Values.backend.ingress.hosts }}/http
             - name: INSTANCE_SECRET
               valueFrom:
                 secretKeyRef:
@@ -53,9 +53,6 @@ spec:
           ports:
             - name: http
               containerPort: 3210
-              protocol: TCP
-            - name: http-actions
-              containerPort: 3211
               protocol: TCP
           {{- with .Values.backend.resources }}
           resources:

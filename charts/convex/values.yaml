@@ -34,10 +34,7 @@ backend:
     # runAsUser: 1000
   service:
     type: ClusterIP
-    api:
-      port: 3210
-    actions:
-      port: 3211
+    port: 3210
   environment:
     - name: POSTGRES_URL
       value: ""
@@ -45,12 +42,8 @@ backend:
     enabled: true
     className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
     annotations: {}
-    tls:
-      api: ""
-      actions: ""
-    hosts:
-      api: api.example.com
-      actions: example.com
+    tls: ""
+    hosts: api.example.com
   volumeMounts: {}
   #   - name: volume_name
   #     mountPath: /path/to/my/secret
