@@ -1,0 +1,61 @@
+{{- $fullName := include "convex.backend.fullname" . -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-api
+  labels:
+    {{- include "convex.labels" . | nindent 4 }}
+  {{- with .Values.backend.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.backend.ingress.className }}
+  {{- if .Values.backend.ingress.tls.api }}
+  tls:
+    - hosts:
+        - {{ .Values.backend.ingress.hosts.api | quote }}
+      secretName: {{ .Values.backend.ingress.tls.api }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.backend.ingress.hosts.api | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ .Values.backend.service.api.port }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-actions
+  labels:
+    {{- include "convex.labels" . | nindent 4 }}
+  {{- with .Values.backend.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.backend.ingress.className }}
+  {{- if .Values.backend.ingress.tls.actions }}
+  tls:
+    - hosts:
+        - {{ .Values.backend.ingress.hosts.actions | quote }}
+      secretName: {{ .Values.backend.ingress.tls.actions }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.backend.ingress.hosts.actions | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ .Values.backend.service.actions.port }}

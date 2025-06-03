@@ -1,0 +1,148 @@
+nameOverride: ""
+fullnameOverride: ""
+
+secret:
+  backend:
+    instanceSecret: ""
+
+backend:
+  image:
+    repository: ghcr.io/get-convex/convex-backend
+    pullPolicy: IfNotPresent
+    tag: "c1a7ac393888d743e704de56cf569a154b4526d4"
+  imagePullSecrets: []
+  replicaCount: 1
+  nameOverride: ""
+  fullnameOverride: ""
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+  podAnnotations: {}
+  podSecurityContext: {}
+    # fsGroup: 2000
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+  service:
+    type: ClusterIP
+    api:
+      port: 3210
+    actions:
+      port: 3211
+  environment:
+    - name: POSTGRES_URL
+      value: ""
+  ingress:
+    enabled: true
+    className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
+    annotations: {}
+    tls:
+      api: ""
+      actions: ""
+    hosts:
+      api: api.example.com
+      actions: example.com
+  volumeMounts: {}
+  #   - name: volume_name
+  #     mountPath: /path/to/my/secret
+  volumes: {}
+  #   - name: volume_name
+  #     secret:
+  #       defaultMode: 733
+  #       secretName: my_secret
+  #       items:
+  #       - key: my_secret.txt
+  #         path: name_of_file_in_container.txt
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  persistence:
+    enabled: false
+    storageClassName: ""
+    annotations: {}
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+dashboard:
+  image:
+    repository: ghcr.io/get-convex/convex-dashboard
+    pullPolicy: IfNotPresent
+    tag: "c1a7ac393888d743e704de56cf569a154b4526d4"
+  imagePullSecrets: []
+  replicaCount: 1
+  nameOverride: ""
+  fullnameOverride: ""
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+  podAnnotations: {}
+  podSecurityContext: {}
+    # fsGroup: 2000
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+  service:
+    type: ClusterIP
+    port: 6791
+  environment: []
+  ingress:
+    enabled: true
+    className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
+    annotations: {}
+    tls: ""
+    hosts: dashboard.example.com
+  volumeMounts: {}
+  #   - name: volume_name
+  #     mountPath: /path/to/my/secret
+  volumes: {}
+  #   - name: volume_name
+  #     secret:
+  #       defaultMode: 733
+  #       secretName: my_secret
+  #       items:
+  #       - key: my_secret.txt
+  #         path: name_of_file_in_container.txt
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

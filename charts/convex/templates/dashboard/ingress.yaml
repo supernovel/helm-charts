@@ -1,0 +1,30 @@
+{{- $fullName := include "convex.dashboard.fullname" . -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "convex.labels" . | nindent 4 }}
+  {{- with .Values.dashboard.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.dashboard.ingress.className }}
+  {{- if .Values.dashboard.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.dashboard.ingress.hosts | quote }}
+      secretName: {{ .Values.dashboard.ingress.tls }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.dashboard.ingress.hosts | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ .Values.dashboard.service.port }}

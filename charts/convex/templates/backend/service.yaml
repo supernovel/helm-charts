@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "convex.backend.fullname" . }}
+  labels:
+    {{- include "convex.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.backend.service.type }}
+  ports:
+    - port: {{ .Values.backend.service.api.port }}
+      targetPort: 3210
+      protocol: TCP
+      name: http
+    - port: {{ .Values.backend.service.actions.port }}
+      targetPort: 3211
+      protocol: TCP
+      name: http-actions
+  selector:
+    {{- include "convex.backend.selectorLabels" . | nindent 4 }}

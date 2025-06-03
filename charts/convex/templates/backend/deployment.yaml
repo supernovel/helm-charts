@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "convex.backend.fullname" . }}
+  labels:
+    {{- include "convex.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "convex.backend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.backend.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "convex.backend.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.backend.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "convex.backend.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.backend.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "convex.backend.name" $ }}
+          securityContext:
+            {{- toYaml .Values.backend.securityContext | nindent 12 }}
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          env:
+            {{- with .Values.backend.environment }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+            - name: CONVEX_CLOUD_ORIGIN
+              value: {{ .Values.backend.ingress.hosts.api | quote }}
+            - name: CONVEX_SITE_ORIGIN
+              value: {{ .Values.backend.ingress.hosts.actions | quote }}
+            - name: INSTANCE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "convex.secret.backend" . }}
+                  key: instance_secret
+          livenessProbe:
+            httpGet:
+              path: /version
+              port: 3210
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          ports:
+            - name: http
+              containerPort: 3210
+              protocol: TCP
+            - name: http-actions
+              containerPort: 3211
+              protocol: TCP
+          {{- with .Values.backend.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /convex/data
+              name: convex-data
+            {{- with .Values.backend.volumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- with .Values.backend.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.backend.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.backend.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: convex-data
+          {{- if .Values.backend.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "convex.backend.fullname" . }}-pvc
+          {{- else }}
+          emptyDir:
+            medium: ""
+          {{- end }}
+        {{- with .Values.backend.volumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        

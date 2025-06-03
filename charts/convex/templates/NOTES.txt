@@ -1,0 +1,4 @@
+---
+Thank you for installing {{ .Chart.Name }}!
+
+Visit the dashboard at https://{{ .Values.dashboard.ingress.hosts }}
