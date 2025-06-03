@@ -36,7 +36,7 @@ spec:
               {{- toYaml . | nindent 12 }}
             {{- end }}
             - name: NEXT_PUBLIC_DEPLOYMENT_URL
-              value: {{ .Values.backend.ingress.hosts.api }}
+              value: https://{{ .Values.backend.ingress.hosts.api }}
           ports:
             - name: http
               containerPort: 6791
