@@ -1,0 +1,639 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "backend": {
+      "additionalProperties": false,
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "environment": {
+          "items": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "default": "POSTGRES_URL",
+                    "required": [],
+                    "title": "name",
+                    "type": "string"
+                  },
+                  "value": {
+                    "default": "",
+                    "required": [],
+                    "title": "value",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "value"
+                ],
+                "type": "object"
+              }
+            ],
+            "required": []
+          },
+          "required": [],
+          "title": "environment",
+          "type": "array"
+        },
+        "fullnameOverride": {
+          "default": "",
+          "required": [],
+          "title": "fullnameOverride",
+          "type": "string"
+        },
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullPolicy": {
+              "default": "IfNotPresent",
+              "required": [],
+              "title": "pullPolicy",
+              "type": "string"
+            },
+            "repository": {
+              "default": "ghcr.io/get-convex/convex-backend",
+              "required": [],
+              "title": "repository",
+              "type": "string"
+            },
+            "tag": {
+              "default": "c1a7ac393888d743e704de56cf569a154b4526d4",
+              "required": [],
+              "title": "tag",
+              "type": "string"
+            }
+          },
+          "required": [
+            "repository",
+            "pullPolicy",
+            "tag"
+          ],
+          "title": "image",
+          "type": "object"
+        },
+        "imagePullSecrets": {
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "imagePullSecrets",
+          "type": "array"
+        },
+        "ingress": {
+          "additionalProperties": false,
+          "properties": {
+            "annotations": {
+              "additionalProperties": false,
+              "required": [],
+              "title": "annotations",
+              "type": "object"
+            },
+            "className": {
+              "default": "traefik",
+              "required": [],
+              "title": "className",
+              "type": "string"
+            },
+            "enabled": {
+              "default": true,
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "hosts": {
+              "default": "api.example.com",
+              "required": [],
+              "title": "hosts",
+              "type": "string"
+            },
+            "tls": {
+              "default": "",
+              "required": [],
+              "title": "tls",
+              "type": "string"
+            }
+          },
+          "required": [
+            "enabled",
+            "className",
+            "annotations",
+            "tls",
+            "hosts"
+          ],
+          "title": "ingress",
+          "type": "object"
+        },
+        "nameOverride": {
+          "default": "",
+          "required": [],
+          "title": "nameOverride",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "nodeSelector",
+          "type": "object"
+        },
+        "persistence": {
+          "additionalProperties": false,
+          "description": "We usually recommend not to specify default resources and to leave this as a conscious\nchoice for the user. This also increases chances charts run on environments with little\nresources, such as Minikube. If you do want to specify resources, uncomment the following\nlines, adjust them as necessary, and remove the curly braces after 'resources:'.\nlimits:\n  cpu: 100m\n  memory: 128Mi\nrequests:\n  cpu: 100m\n  memory: 128Mi",
+          "properties": {
+            "accessModes": {
+              "items": {
+                "anyOf": [
+                  {
+                    "required": [],
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "accessModes",
+              "type": "array"
+            },
+            "annotations": {
+              "additionalProperties": false,
+              "required": [],
+              "title": "annotations",
+              "type": "object"
+            },
+            "enabled": {
+              "default": false,
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "size": {
+              "default": "10Gi",
+              "required": [],
+              "title": "size",
+              "type": "string"
+            },
+            "storageClassName": {
+              "default": "",
+              "required": [],
+              "title": "storageClassName",
+              "type": "string"
+            }
+          },
+          "required": [
+            "enabled",
+            "storageClassName",
+            "annotations",
+            "size",
+            "accessModes"
+          ],
+          "title": "persistence",
+          "type": "object"
+        },
+        "podAnnotations": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "podAnnotations",
+          "type": "object"
+        },
+        "podSecurityContext": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "podSecurityContext",
+          "type": "object"
+        },
+        "replicaCount": {
+          "default": 1,
+          "required": [],
+          "title": "replicaCount",
+          "type": "integer"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "description": "  - name: volume_name\n    secret:\n      defaultMode: 733\n      secretName: my_secret\n      items:\n      - key: my_secret.txt\n        path: name_of_file_in_container.txt",
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "securityContext": {
+          "additionalProperties": false,
+          "description": "fsGroup: 2000",
+          "required": [],
+          "title": "securityContext",
+          "type": "object"
+        },
+        "service": {
+          "additionalProperties": false,
+          "description": "capabilities:\n  drop:\n  - ALL\nreadOnlyRootFilesystem: true\nrunAsNonRoot: true\nrunAsUser: 1000",
+          "properties": {
+            "port": {
+              "default": 3210,
+              "required": [],
+              "title": "port",
+              "type": "integer"
+            },
+            "type": {
+              "default": "ClusterIP",
+              "required": [],
+              "title": "type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "port"
+          ],
+          "title": "service",
+          "type": "object"
+        },
+        "serviceAccount": {
+          "additionalProperties": false,
+          "properties": {
+            "annotations": {
+              "additionalProperties": false,
+              "description": "Annotations to add to the service account",
+              "required": [],
+              "title": "annotations",
+              "type": "object"
+            },
+            "create": {
+              "default": true,
+              "description": "Specifies whether a service account should be created",
+              "required": [],
+              "title": "create",
+              "type": "boolean"
+            },
+            "name": {
+              "default": "",
+              "description": "The name of the service account to use.\nIf not set and create is true, a name is generated using the fullname template",
+              "required": [],
+              "title": "name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "create",
+            "annotations",
+            "name"
+          ],
+          "title": "serviceAccount",
+          "type": "object"
+        },
+        "tolerations": {
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "tolerations",
+          "type": "array"
+        },
+        "volumeMounts": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "volumeMounts",
+          "type": "object"
+        },
+        "volumes": {
+          "additionalProperties": false,
+          "description": "  - name: volume_name\n    mountPath: /path/to/my/secret",
+          "required": [],
+          "title": "volumes",
+          "type": "object"
+        }
+      },
+      "required": [
+        "image",
+        "imagePullSecrets",
+        "replicaCount",
+        "nameOverride",
+        "fullnameOverride",
+        "serviceAccount",
+        "podAnnotations",
+        "podSecurityContext",
+        "securityContext",
+        "service",
+        "environment",
+        "ingress",
+        "volumeMounts",
+        "volumes",
+        "resources",
+        "persistence",
+        "nodeSelector",
+        "tolerations",
+        "affinity"
+      ],
+      "title": "backend",
+      "type": "object"
+    },
+    "dashboard": {
+      "additionalProperties": false,
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "environment": {
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "environment",
+          "type": "array"
+        },
+        "fullnameOverride": {
+          "default": "",
+          "required": [],
+          "title": "fullnameOverride",
+          "type": "string"
+        },
+        "image": {
+          "additionalProperties": false,
+          "properties": {
+            "pullPolicy": {
+              "default": "IfNotPresent",
+              "required": [],
+              "title": "pullPolicy",
+              "type": "string"
+            },
+            "repository": {
+              "default": "ghcr.io/get-convex/convex-dashboard",
+              "required": [],
+              "title": "repository",
+              "type": "string"
+            },
+            "tag": {
+              "default": "c1a7ac393888d743e704de56cf569a154b4526d4",
+              "required": [],
+              "title": "tag",
+              "type": "string"
+            }
+          },
+          "required": [
+            "repository",
+            "pullPolicy",
+            "tag"
+          ],
+          "title": "image",
+          "type": "object"
+        },
+        "imagePullSecrets": {
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "imagePullSecrets",
+          "type": "array"
+        },
+        "ingress": {
+          "additionalProperties": false,
+          "properties": {
+            "annotations": {
+              "additionalProperties": false,
+              "required": [],
+              "title": "annotations",
+              "type": "object"
+            },
+            "className": {
+              "default": "traefik",
+              "required": [],
+              "title": "className",
+              "type": "string"
+            },
+            "enabled": {
+              "default": true,
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "hosts": {
+              "default": "dashboard.example.com",
+              "required": [],
+              "title": "hosts",
+              "type": "string"
+            },
+            "tls": {
+              "default": "",
+              "required": [],
+              "title": "tls",
+              "type": "string"
+            }
+          },
+          "required": [
+            "enabled",
+            "className",
+            "annotations",
+            "tls",
+            "hosts"
+          ],
+          "title": "ingress",
+          "type": "object"
+        },
+        "nameOverride": {
+          "default": "",
+          "required": [],
+          "title": "nameOverride",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "additionalProperties": false,
+          "description": "We usually recommend not to specify default resources and to leave this as a conscious\nchoice for the user. This also increases chances charts run on environments with little\nresources, such as Minikube. If you do want to specify resources, uncomment the following\nlines, adjust them as necessary, and remove the curly braces after 'resources:'.\nlimits:\n  cpu: 100m\n  memory: 128Mi\nrequests:\n  cpu: 100m\n  memory: 128Mi",
+          "required": [],
+          "title": "nodeSelector",
+          "type": "object"
+        },
+        "podAnnotations": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "podAnnotations",
+          "type": "object"
+        },
+        "podSecurityContext": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "podSecurityContext",
+          "type": "object"
+        },
+        "replicaCount": {
+          "default": 1,
+          "required": [],
+          "title": "replicaCount",
+          "type": "integer"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "description": "  - name: volume_name\n    secret:\n      defaultMode: 733\n      secretName: my_secret\n      items:\n      - key: my_secret.txt\n        path: name_of_file_in_container.txt",
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "securityContext": {
+          "additionalProperties": false,
+          "description": "fsGroup: 2000",
+          "required": [],
+          "title": "securityContext",
+          "type": "object"
+        },
+        "service": {
+          "additionalProperties": false,
+          "description": "capabilities:\n  drop:\n  - ALL\nreadOnlyRootFilesystem: true\nrunAsNonRoot: true\nrunAsUser: 1000",
+          "properties": {
+            "port": {
+              "default": 6791,
+              "required": [],
+              "title": "port",
+              "type": "integer"
+            },
+            "type": {
+              "default": "ClusterIP",
+              "required": [],
+              "title": "type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "port"
+          ],
+          "title": "service",
+          "type": "object"
+        },
+        "serviceAccount": {
+          "additionalProperties": false,
+          "properties": {
+            "annotations": {
+              "additionalProperties": false,
+              "description": "Annotations to add to the service account",
+              "required": [],
+              "title": "annotations",
+              "type": "object"
+            },
+            "create": {
+              "default": true,
+              "description": "Specifies whether a service account should be created",
+              "required": [],
+              "title": "create",
+              "type": "boolean"
+            },
+            "name": {
+              "default": "",
+              "description": "The name of the service account to use.\nIf not set and create is true, a name is generated using the fullname template",
+              "required": [],
+              "title": "name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "create",
+            "annotations",
+            "name"
+          ],
+          "title": "serviceAccount",
+          "type": "object"
+        },
+        "tolerations": {
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "tolerations",
+          "type": "array"
+        },
+        "volumeMounts": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "volumeMounts",
+          "type": "object"
+        },
+        "volumes": {
+          "additionalProperties": false,
+          "description": "  - name: volume_name\n    mountPath: /path/to/my/secret",
+          "required": [],
+          "title": "volumes",
+          "type": "object"
+        }
+      },
+      "required": [
+        "image",
+        "imagePullSecrets",
+        "replicaCount",
+        "nameOverride",
+        "fullnameOverride",
+        "serviceAccount",
+        "podAnnotations",
+        "podSecurityContext",
+        "securityContext",
+        "service",
+        "environment",
+        "ingress",
+        "volumeMounts",
+        "volumes",
+        "resources",
+        "nodeSelector",
+        "tolerations",
+        "affinity"
+      ],
+      "title": "dashboard",
+      "type": "object"
+    },
+    "fullnameOverride": {
+      "default": "",
+      "required": [],
+      "title": "fullnameOverride",
+      "type": "string"
+    },
+    "global": {
+      "description": "Global values are values that can be accessed from any chart or subchart by exactly the same name.",
+      "required": [],
+      "title": "global",
+      "type": "object"
+    },
+    "nameOverride": {
+      "default": "",
+      "required": [],
+      "title": "nameOverride",
+      "type": "string"
+    },
+    "secret": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "additionalProperties": false,
+          "properties": {
+            "instanceSecret": {
+              "default": "",
+              "required": [],
+              "title": "instanceSecret",
+              "type": "string"
+            }
+          },
+          "required": [
+            "instanceSecret"
+          ],
+          "title": "backend",
+          "type": "object"
+        }
+      },
+      "required": [
+        "backend"
+      ],
+      "title": "secret",
+      "type": "object"
+    }
+  },
+  "required": [
+    "nameOverride",
+    "fullnameOverride",
+    "secret",
+    "backend",
+    "dashboard"
+  ],
+  "type": "object"
+}
