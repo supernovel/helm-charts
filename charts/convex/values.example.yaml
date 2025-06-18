@@ -8,8 +8,6 @@ backend:
     repository: ghcr.io/get-convex/convex-backend
     tag: "c1a7ac393888d743e704de56cf569a154b4526d4"
   replicaCount: 1
-  nameOverride: ""
-  fullnameOverride: ""
   service:
     api:
       port: 3210

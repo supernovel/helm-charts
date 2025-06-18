@@ -7,31 +7,23 @@
       "properties": {
         "environment": {
           "items": {
-            "anyOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "name": {
-                    "default": "RUST_LOG",
-                    "required": [],
-                    "title": "name",
-                    "type": "string"
-                  },
-                  "value": {
-                    "default": "info",
-                    "required": [],
-                    "title": "value",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "name",
-                  "value"
-                ],
-                "type": "object"
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "default": "RUST_LOG",
+                "required": [],
+                "title": "name",
+                "type": "string"
+              },
+              "value": {
+                "default": "info",
+                "required": [],
+                "title": "value",
+                "type": "string"
               }
-            ],
-            "required": []
+            },
+            "required": ["name", "value"],
+            "type": "object"
           },
           "required": [],
           "title": "environment",
@@ -53,10 +45,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "repository",
-            "tag"
-          ],
+          "required": ["repository", "tag"],
           "title": "image",
           "type": "object"
         },
@@ -64,7 +53,7 @@
           "additionalProperties": false,
           "properties": {
             "annotations": {
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
                 "cert-manager.io/cluster-issuer": {
                   "default": "letsencrypt-prod",
@@ -79,10 +68,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "traefik.ingress.kubernetes.io/router.entrypoints",
-                "cert-manager.io/cluster-issuer"
-              ],
+              "required": [],
               "title": "annotations",
               "type": "object"
             },
@@ -114,10 +100,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "api",
-                "actions"
-              ],
+              "required": ["api", "actions"],
               "title": "hosts",
               "type": "object"
             },
@@ -137,21 +120,12 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "api",
-                "actions"
-              ],
+              "required": ["api", "actions"],
               "title": "tls",
               "type": "object"
             }
           },
-          "required": [
-            "enabled",
-            "className",
-            "annotations",
-            "tls",
-            "hosts"
-          ],
+          "required": ["enabled", "tls", "hosts"],
           "title": "ingress",
           "type": "object"
         },
@@ -177,11 +151,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "enabled",
-            "storageClassName",
-            "size"
-          ],
+          "required": ["enabled"],
           "title": "persistence",
           "type": "object"
         },
@@ -210,10 +180,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "cpu",
-                "memory"
-              ],
+              "required": [],
               "title": "limits",
               "type": "object"
             },
@@ -233,18 +200,12 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "cpu",
-                "memory"
-              ],
+              "required": [],
               "title": "requests",
               "type": "object"
             }
           },
-          "required": [
-            "limits",
-            "requests"
-          ],
+          "required": [],
           "title": "resources",
           "type": "object"
         },
@@ -261,9 +222,7 @@
                   "type": "integer"
                 }
               },
-              "required": [
-                "port"
-              ],
+              "required": ["port"],
               "title": "actions",
               "type": "object"
             },
@@ -277,17 +236,12 @@
                   "type": "integer"
                 }
               },
-              "required": [
-                "port"
-              ],
+              "required": ["port"],
               "title": "api",
               "type": "object"
             }
           },
-          "required": [
-            "api",
-            "actions"
-          ],
+          "required": ["api", "actions"],
           "title": "service",
           "type": "object"
         }
@@ -298,7 +252,6 @@
         "service",
         "environment",
         "ingress",
-        "resources",
         "persistence"
       ],
       "title": "backend",
@@ -323,10 +276,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "repository",
-            "tag"
-          ],
+          "required": ["repository", "tag"],
           "title": "image",
           "type": "object"
         },
@@ -334,7 +284,7 @@
           "additionalProperties": false,
           "properties": {
             "annotations": {
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
                 "cert-manager.io/cluster-issuer": {
                   "default": "letsencrypt-prod",
@@ -349,10 +299,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "traefik.ingress.kubernetes.io/router.entrypoints",
-                "cert-manager.io/cluster-issuer"
-              ],
+              "required": [],
               "title": "annotations",
               "type": "object"
             },
@@ -381,13 +328,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "enabled",
-            "className",
-            "annotations",
-            "tls",
-            "hosts"
-          ],
+          "required": ["enabled", "tls", "hosts"],
           "title": "ingress",
           "type": "object"
         },
@@ -416,10 +357,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "cpu",
-                "memory"
-              ],
+              "required": [],
               "title": "limits",
               "type": "object"
             },
@@ -439,18 +377,12 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "cpu",
-                "memory"
-              ],
+              "required": [],
               "title": "requests",
               "type": "object"
             }
           },
-          "required": [
-            "limits",
-            "requests"
-          ],
+          "required": [],
           "title": "resources",
           "type": "object"
         },
@@ -464,27 +396,13 @@
               "type": "integer"
             }
           },
-          "required": [
-            "port"
-          ],
+          "required": ["port"],
           "title": "service",
           "type": "object"
         }
       },
-      "required": [
-        "image",
-        "replicaCount",
-        "service",
-        "ingress",
-        "resources"
-      ],
+      "required": ["image", "replicaCount", "service", "ingress"],
       "title": "dashboard",
-      "type": "object"
-    },
-    "global": {
-      "description": "Global values are values that can be accessed from any chart or subchart by exactly the same name.",
-      "required": [],
-      "title": "global",
       "type": "object"
     },
     "secret": {
@@ -501,24 +419,22 @@
               "type": "string"
             }
           },
-          "required": [
-            "instanceSecret"
-          ],
+          "required": ["instanceSecret"],
           "title": "backend",
           "type": "object"
         }
       },
-      "required": [
-        "backend"
-      ],
+      "required": ["backend"],
       "title": "secret",
+      "type": "object"
+    },
+    "global": {
+      "description": "Global values are values that can be accessed from any chart or subchart by exactly the same name.",
+      "required": [],
+      "title": "global",
       "type": "object"
     }
   },
-  "required": [
-    "secret",
-    "backend",
-    "dashboard"
-  ],
+  "required": ["secret", "backend", "dashboard"],
   "type": "object"
 }
