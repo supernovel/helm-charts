@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   convex:
   - apiVersion: v2
+    created: "2025-06-18T11:39:40.004692695Z"
+    description: A Helm chart for Kubernetes
+    digest: f4f065856c4f5add216b3bad481e5c31077c3c3bd0f6cfda6fa12d478ac950a1
+    name: convex
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/convex-0.1.5/convex-0.1.5.tgz
+    version: 0.1.5
+  - apiVersion: v2
     created: "2025-06-17T13:37:39.219724553Z"
     description: A Helm chart for Kubernetes
     digest: 20b5a102cd7b2f9f42d3ae250f6720cc815cf6ee3e6b6fdadd12edd1eca5eadb
@@ -209,4 +218,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2025-06-17T13:37:39.219773926Z"
+generated: "2025-06-18T11:39:40.004746916Z"
