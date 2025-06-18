@@ -5,12 +5,6 @@
     "backend": {
       "additionalProperties": false,
       "properties": {
-        "affinity": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "affinity",
-          "type": "object"
-        },
         "environment": {
           "items": {
             "anyOf": [
@@ -18,13 +12,13 @@
                 "additionalProperties": false,
                 "properties": {
                   "name": {
-                    "default": "POSTGRES_URL",
+                    "default": "RUST_LOG",
                     "required": [],
                     "title": "name",
                     "type": "string"
                   },
                   "value": {
-                    "default": "",
+                    "default": "info",
                     "required": [],
                     "title": "value",
                     "type": "string"
@@ -43,21 +37,9 @@
           "title": "environment",
           "type": "array"
         },
-        "fullnameOverride": {
-          "default": "",
-          "required": [],
-          "title": "fullnameOverride",
-          "type": "string"
-        },
         "image": {
           "additionalProperties": false,
           "properties": {
-            "pullPolicy": {
-              "default": "IfNotPresent",
-              "required": [],
-              "title": "pullPolicy",
-              "type": "string"
-            },
             "repository": {
               "default": "ghcr.io/get-convex/convex-backend",
               "required": [],
@@ -73,26 +55,34 @@
           },
           "required": [
             "repository",
-            "pullPolicy",
             "tag"
           ],
           "title": "image",
           "type": "object"
-        },
-        "imagePullSecrets": {
-          "items": {
-            "required": []
-          },
-          "required": [],
-          "title": "imagePullSecrets",
-          "type": "array"
         },
         "ingress": {
           "additionalProperties": false,
           "properties": {
             "annotations": {
               "additionalProperties": false,
-              "required": [],
+              "properties": {
+                "cert-manager.io/cluster-issuer": {
+                  "default": "letsencrypt-prod",
+                  "required": [],
+                  "title": "cert-manager.io/cluster-issuer",
+                  "type": "string"
+                },
+                "traefik.ingress.kubernetes.io/router.entrypoints": {
+                  "default": "websecure",
+                  "required": [],
+                  "title": "traefik.ingress.kubernetes.io/router.entrypoints",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "traefik.ingress.kubernetes.io/router.entrypoints",
+                "cert-manager.io/cluster-issuer"
+              ],
               "title": "annotations",
               "type": "object"
             },
@@ -109,16 +99,50 @@
               "type": "boolean"
             },
             "hosts": {
-              "default": "api.example.com",
-              "required": [],
+              "additionalProperties": false,
+              "properties": {
+                "actions": {
+                  "default": "convex.example.com",
+                  "required": [],
+                  "title": "actions",
+                  "type": "string"
+                },
+                "api": {
+                  "default": "api.convex.example.com",
+                  "required": [],
+                  "title": "api",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "api",
+                "actions"
+              ],
               "title": "hosts",
-              "type": "string"
+              "type": "object"
             },
             "tls": {
-              "default": "",
-              "required": [],
+              "additionalProperties": false,
+              "properties": {
+                "actions": {
+                  "default": "convex-actions-tls",
+                  "required": [],
+                  "title": "actions",
+                  "type": "string"
+                },
+                "api": {
+                  "default": "convex-api-tls",
+                  "required": [],
+                  "title": "api",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "api",
+                "actions"
+              ],
               "title": "tls",
-              "type": "string"
+              "type": "object"
             }
           },
           "required": [
@@ -131,42 +155,9 @@
           "title": "ingress",
           "type": "object"
         },
-        "nameOverride": {
-          "default": "",
-          "required": [],
-          "title": "nameOverride",
-          "type": "string"
-        },
-        "nodeSelector": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "nodeSelector",
-          "type": "object"
-        },
         "persistence": {
           "additionalProperties": false,
-          "description": "We usually recommend not to specify default resources and to leave this as a conscious\nchoice for the user. This also increases chances charts run on environments with little\nresources, such as Minikube. If you do want to specify resources, uncomment the following\nlines, adjust them as necessary, and remove the curly braces after 'resources:'.\nlimits:\n  cpu: 100m\n  memory: 128Mi\nrequests:\n  cpu: 100m\n  memory: 128Mi",
           "properties": {
-            "accessModes": {
-              "items": {
-                "anyOf": [
-                  {
-                    "required": [],
-                    "type": "string"
-                  }
-                ],
-                "required": []
-              },
-              "required": [],
-              "title": "accessModes",
-              "type": "array"
-            },
-            "annotations": {
-              "additionalProperties": false,
-              "required": [],
-              "title": "annotations",
-              "type": "object"
-            },
             "enabled": {
               "default": false,
               "required": [],
@@ -180,7 +171,7 @@
               "type": "string"
             },
             "storageClassName": {
-              "default": "",
+              "default": "local-path",
               "required": [],
               "title": "storageClassName",
               "type": "string"
@@ -189,23 +180,9 @@
           "required": [
             "enabled",
             "storageClassName",
-            "annotations",
-            "size",
-            "accessModes"
+            "size"
           ],
           "title": "persistence",
-          "type": "object"
-        },
-        "podAnnotations": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "podAnnotations",
-          "type": "object"
-        },
-        "podSecurityContext": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "podSecurityContext",
           "type": "object"
         },
         "replicaCount": {
@@ -216,117 +193,113 @@
         },
         "resources": {
           "additionalProperties": false,
-          "description": "  - name: volume_name\n    secret:\n      defaultMode: 733\n      secretName: my_secret\n      items:\n      - key: my_secret.txt\n        path: name_of_file_in_container.txt",
-          "required": [],
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": 1,
+                  "required": [],
+                  "title": "cpu",
+                  "type": "integer"
+                },
+                "memory": {
+                  "default": "2048Mi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "cpu",
+                "memory"
+              ],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "500m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "1024Mi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "cpu",
+                "memory"
+              ],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [
+            "limits",
+            "requests"
+          ],
           "title": "resources",
-          "type": "object"
-        },
-        "securityContext": {
-          "additionalProperties": false,
-          "description": "fsGroup: 2000",
-          "required": [],
-          "title": "securityContext",
           "type": "object"
         },
         "service": {
           "additionalProperties": false,
-          "description": "capabilities:\n  drop:\n  - ALL\nreadOnlyRootFilesystem: true\nrunAsNonRoot: true\nrunAsUser: 1000",
           "properties": {
-            "port": {
-              "default": 3210,
-              "required": [],
-              "title": "port",
-              "type": "integer"
-            },
-            "type": {
-              "default": "ClusterIP",
-              "required": [],
-              "title": "type",
-              "type": "string"
-            }
-          },
-          "required": [
-            "type",
-            "port"
-          ],
-          "title": "service",
-          "type": "object"
-        },
-        "serviceAccount": {
-          "additionalProperties": false,
-          "properties": {
-            "annotations": {
+            "actions": {
               "additionalProperties": false,
-              "description": "Annotations to add to the service account",
-              "required": [],
-              "title": "annotations",
+              "properties": {
+                "port": {
+                  "default": 3211,
+                  "required": [],
+                  "title": "port",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "port"
+              ],
+              "title": "actions",
               "type": "object"
             },
-            "create": {
-              "default": true,
-              "description": "Specifies whether a service account should be created",
-              "required": [],
-              "title": "create",
-              "type": "boolean"
-            },
-            "name": {
-              "default": "",
-              "description": "The name of the service account to use.\nIf not set and create is true, a name is generated using the fullname template",
-              "required": [],
-              "title": "name",
-              "type": "string"
+            "api": {
+              "additionalProperties": false,
+              "properties": {
+                "port": {
+                  "default": 3210,
+                  "required": [],
+                  "title": "port",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "port"
+              ],
+              "title": "api",
+              "type": "object"
             }
           },
           "required": [
-            "create",
-            "annotations",
-            "name"
+            "api",
+            "actions"
           ],
-          "title": "serviceAccount",
-          "type": "object"
-        },
-        "tolerations": {
-          "items": {
-            "required": []
-          },
-          "required": [],
-          "title": "tolerations",
-          "type": "array"
-        },
-        "volumeMounts": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "volumeMounts",
-          "type": "object"
-        },
-        "volumes": {
-          "additionalProperties": false,
-          "description": "  - name: volume_name\n    mountPath: /path/to/my/secret",
-          "required": [],
-          "title": "volumes",
+          "title": "service",
           "type": "object"
         }
       },
       "required": [
         "image",
-        "imagePullSecrets",
         "replicaCount",
-        "nameOverride",
-        "fullnameOverride",
-        "serviceAccount",
-        "podAnnotations",
-        "podSecurityContext",
-        "securityContext",
         "service",
         "environment",
         "ingress",
-        "volumeMounts",
-        "volumes",
         "resources",
-        "persistence",
-        "nodeSelector",
-        "tolerations",
-        "affinity"
+        "persistence"
       ],
       "title": "backend",
       "type": "object"
@@ -334,35 +307,9 @@
     "dashboard": {
       "additionalProperties": false,
       "properties": {
-        "affinity": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "affinity",
-          "type": "object"
-        },
-        "environment": {
-          "items": {
-            "required": []
-          },
-          "required": [],
-          "title": "environment",
-          "type": "array"
-        },
-        "fullnameOverride": {
-          "default": "",
-          "required": [],
-          "title": "fullnameOverride",
-          "type": "string"
-        },
         "image": {
           "additionalProperties": false,
           "properties": {
-            "pullPolicy": {
-              "default": "IfNotPresent",
-              "required": [],
-              "title": "pullPolicy",
-              "type": "string"
-            },
             "repository": {
               "default": "ghcr.io/get-convex/convex-dashboard",
               "required": [],
@@ -378,26 +325,34 @@
           },
           "required": [
             "repository",
-            "pullPolicy",
             "tag"
           ],
           "title": "image",
           "type": "object"
-        },
-        "imagePullSecrets": {
-          "items": {
-            "required": []
-          },
-          "required": [],
-          "title": "imagePullSecrets",
-          "type": "array"
         },
         "ingress": {
           "additionalProperties": false,
           "properties": {
             "annotations": {
               "additionalProperties": false,
-              "required": [],
+              "properties": {
+                "cert-manager.io/cluster-issuer": {
+                  "default": "letsencrypt-prod",
+                  "required": [],
+                  "title": "cert-manager.io/cluster-issuer",
+                  "type": "string"
+                },
+                "traefik.ingress.kubernetes.io/router.entrypoints": {
+                  "default": "websecure",
+                  "required": [],
+                  "title": "traefik.ingress.kubernetes.io/router.entrypoints",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "traefik.ingress.kubernetes.io/router.entrypoints",
+                "cert-manager.io/cluster-issuer"
+              ],
               "title": "annotations",
               "type": "object"
             },
@@ -414,13 +369,13 @@
               "type": "boolean"
             },
             "hosts": {
-              "default": "dashboard.example.com",
+              "default": "dashboard.convex.example.com",
               "required": [],
               "title": "hosts",
               "type": "string"
             },
             "tls": {
-              "default": "",
+              "default": "convex-dashboard-tls",
               "required": [],
               "title": "tls",
               "type": "string"
@@ -436,31 +391,6 @@
           "title": "ingress",
           "type": "object"
         },
-        "nameOverride": {
-          "default": "",
-          "required": [],
-          "title": "nameOverride",
-          "type": "string"
-        },
-        "nodeSelector": {
-          "additionalProperties": false,
-          "description": "We usually recommend not to specify default resources and to leave this as a conscious\nchoice for the user. This also increases chances charts run on environments with little\nresources, such as Minikube. If you do want to specify resources, uncomment the following\nlines, adjust them as necessary, and remove the curly braces after 'resources:'.\nlimits:\n  cpu: 100m\n  memory: 128Mi\nrequests:\n  cpu: 100m\n  memory: 128Mi",
-          "required": [],
-          "title": "nodeSelector",
-          "type": "object"
-        },
-        "podAnnotations": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "podAnnotations",
-          "type": "object"
-        },
-        "podSecurityContext": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "podSecurityContext",
-          "type": "object"
-        },
         "replicaCount": {
           "default": 1,
           "required": [],
@@ -469,137 +399,93 @@
         },
         "resources": {
           "additionalProperties": false,
-          "description": "  - name: volume_name\n    secret:\n      defaultMode: 733\n      secretName: my_secret\n      items:\n      - key: my_secret.txt\n        path: name_of_file_in_container.txt",
-          "required": [],
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "200m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "256Mi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "cpu",
+                "memory"
+              ],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "128Mi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "cpu",
+                "memory"
+              ],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [
+            "limits",
+            "requests"
+          ],
           "title": "resources",
-          "type": "object"
-        },
-        "securityContext": {
-          "additionalProperties": false,
-          "description": "fsGroup: 2000",
-          "required": [],
-          "title": "securityContext",
           "type": "object"
         },
         "service": {
           "additionalProperties": false,
-          "description": "capabilities:\n  drop:\n  - ALL\nreadOnlyRootFilesystem: true\nrunAsNonRoot: true\nrunAsUser: 1000",
           "properties": {
             "port": {
               "default": 6791,
               "required": [],
               "title": "port",
               "type": "integer"
-            },
-            "type": {
-              "default": "ClusterIP",
-              "required": [],
-              "title": "type",
-              "type": "string"
             }
           },
           "required": [
-            "type",
             "port"
           ],
           "title": "service",
-          "type": "object"
-        },
-        "serviceAccount": {
-          "additionalProperties": false,
-          "properties": {
-            "annotations": {
-              "additionalProperties": false,
-              "description": "Annotations to add to the service account",
-              "required": [],
-              "title": "annotations",
-              "type": "object"
-            },
-            "create": {
-              "default": true,
-              "description": "Specifies whether a service account should be created",
-              "required": [],
-              "title": "create",
-              "type": "boolean"
-            },
-            "name": {
-              "default": "",
-              "description": "The name of the service account to use.\nIf not set and create is true, a name is generated using the fullname template",
-              "required": [],
-              "title": "name",
-              "type": "string"
-            }
-          },
-          "required": [
-            "create",
-            "annotations",
-            "name"
-          ],
-          "title": "serviceAccount",
-          "type": "object"
-        },
-        "tolerations": {
-          "items": {
-            "required": []
-          },
-          "required": [],
-          "title": "tolerations",
-          "type": "array"
-        },
-        "volumeMounts": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "volumeMounts",
-          "type": "object"
-        },
-        "volumes": {
-          "additionalProperties": false,
-          "description": "  - name: volume_name\n    mountPath: /path/to/my/secret",
-          "required": [],
-          "title": "volumes",
           "type": "object"
         }
       },
       "required": [
         "image",
-        "imagePullSecrets",
         "replicaCount",
-        "nameOverride",
-        "fullnameOverride",
-        "serviceAccount",
-        "podAnnotations",
-        "podSecurityContext",
-        "securityContext",
         "service",
-        "environment",
         "ingress",
-        "volumeMounts",
-        "volumes",
-        "resources",
-        "nodeSelector",
-        "tolerations",
-        "affinity"
+        "resources"
       ],
       "title": "dashboard",
       "type": "object"
-    },
-    "fullnameOverride": {
-      "default": "",
-      "required": [],
-      "title": "fullnameOverride",
-      "type": "string"
     },
     "global": {
       "description": "Global values are values that can be accessed from any chart or subchart by exactly the same name.",
       "required": [],
       "title": "global",
       "type": "object"
-    },
-    "nameOverride": {
-      "default": "",
-      "required": [],
-      "title": "nameOverride",
-      "type": "string"
     },
     "secret": {
       "additionalProperties": false,
@@ -608,7 +494,8 @@
           "additionalProperties": false,
           "properties": {
             "instanceSecret": {
-              "default": "",
+              "default": "4361726e697461732c206c69746572616c6c79206d65616e696e6720226c6974",
+              "description": "openssl rand -hex 32",
               "required": [],
               "title": "instanceSecret",
               "type": "string"
@@ -629,8 +516,6 @@
     }
   },
   "required": [
-    "nameOverride",
-    "fullnameOverride",
     "secret",
     "backend",
     "dashboard"
