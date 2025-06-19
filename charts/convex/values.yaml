@@ -3,6 +3,7 @@ fullnameOverride: ""
 
 secret:
   backend:
+    # openssl rand -hex 32
     instanceSecret: ""
 
 backend:
