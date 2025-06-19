@@ -4,15 +4,7 @@ secret:
     instanceSecret: "4361726e697461732c206c69746572616c6c79206d65616e696e6720226c6974"
 
 backend:
-  image:
-    repository: ghcr.io/get-convex/convex-backend
-    tag: "c1a7ac393888d743e704de56cf569a154b4526d4"
   replicaCount: 1
-  service:
-    api:
-      port: 3210
-    actions:
-      port: 3211
   environment:
     - name: RUST_LOG
       value: "info"
@@ -23,12 +15,8 @@ backend:
       traefik.ingress.kubernetes.io/router.entrypoints: "websecure",
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
     }
-    tls:
-      api: "convex-api-tls"
-      actions: "convex-actions-tls"
-    hosts:
-      api: api.convex.example.com
-      actions: convex.example.com
+    tls: "convex-api-tls"
+    hosts: api.convex.example.com
   resources:
     limits:
       cpu: 1
@@ -42,12 +30,7 @@ backend:
     size: 10Gi
 
 dashboard:
-  image:
-    repository: ghcr.io/get-convex/convex-dashboard
-    tag: "c1a7ac393888d743e704de56cf569a154b4526d4"
   replicaCount: 1
-  service:
-    port: 6791
   ingress:
     enabled: true
     className: "traefik" # Set to "nginx" if using NGINX Ingress Controller

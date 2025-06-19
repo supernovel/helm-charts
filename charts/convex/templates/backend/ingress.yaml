@@ -14,11 +14,11 @@ spec:
   {{- if .Values.backend.ingress.tls }}
   tls:
     - hosts:
-        - {{ .Values.backend.ingress.hosts | quote }}
+        - {{ .Values.backend.ingress.host | quote }}
       secretName: {{ .Values.backend.ingress.tls }}
   {{- end }}
   rules:
-    - host: {{ .Values.backend.ingress.hosts | quote }}
+    - host: {{ .Values.backend.ingress.host | quote }}
       http:
         paths:
           - path: /

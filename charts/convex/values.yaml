@@ -43,7 +43,7 @@ backend:
     className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
     annotations: {}
     tls: ""
-    hosts: api.example.com
+    host: api.example.com
   volumeMounts: {}
   #   - name: volume_name
   #     mountPath: /path/to/my/secret
@@ -113,7 +113,7 @@ dashboard:
     className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
     annotations: {}
     tls: ""
-    hosts: dashboard.example.com
+    host: dashboard.example.com
   volumeMounts: {}
   #   - name: volume_name
   #     mountPath: /path/to/my/secret
