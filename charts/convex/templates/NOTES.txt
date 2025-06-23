@@ -1,7 +1,7 @@
 ---
 Thank you for installing {{ .Chart.Name }}!
 
-Visit the dashboard at https://{{ .Values.dashboard.ingress.hosts }}
+Visit the dashboard at https://{{ .Values.dashboard.ingress.host }}
 
 Get the admin key by running:
 

@@ -36,9 +36,9 @@ spec:
               {{- toYaml . | nindent 12 }}
             {{- end }}
             - name: CONVEX_CLOUD_ORIGIN
-              value: https://{{ .Values.backend.ingress.hosts }}
+              value: https://{{ .Values.backend.ingress.host }}
             - name: CONVEX_SITE_ORIGIN
-              value: https://{{ .Values.backend.ingress.hosts }}/http
+              value: https://{{ .Values.backend.ingress.host }}/http
             - name: INSTANCE_SECRET
               valueFrom:
                 secretKeyRef:
