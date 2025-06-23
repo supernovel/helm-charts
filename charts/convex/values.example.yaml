@@ -11,7 +11,7 @@ backend:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
     }
     tls: "convex-api-tls"
-    hosts: api.convex.example.com
+    host: api.convex.example.com
   resources:
     limits:
       cpu: 1
@@ -34,7 +34,7 @@ dashboard:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
     }
     tls: "convex-dashboard-tls"
-    hosts: dashboard.convex.example.com
+    host: dashboard.convex.example.com
   resources:
     limits:
       cpu: 200m
