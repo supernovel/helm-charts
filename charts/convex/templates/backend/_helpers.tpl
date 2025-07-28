@@ -41,3 +41,8 @@ Create the name of the service account to use
 {{- default "default" .Values.backend.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+
+{{- define "convex.backend.cnpg.name" -}}
+{{- printf "%s-%s" (include "convex.backend.fullname" .) "cnpg" }}
+{{- end }}

@@ -35,6 +35,24 @@ spec:
             {{- with .Values.backend.environment }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
+            {{- if .Values.backend.cnpg.enabled }}
+            - name: CNPG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "convex.backend.cnpg.name" . }}-app
+                  key: user
+            - name: CNPG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "convex.backend.cnpg.name" . }}-app
+                  key: password
+            - name: CNPG_HOST
+              value: "{{ include "convex.backend.cnpg.name" . }}-rw.{{ .Release.Namespace }}"
+            - name: POSTGRES_URL
+              value: "postgresql://$(CNPG_USER):$(CNPG_PASSWORD)@$(CNPG_HOST):5432"
+            - name: PG_CA_FILE
+              value: "/etc/secrets/ca/ca.crt"
+            {{- end }}
             - name: CONVEX_CLOUD_ORIGIN
               value: https://{{ .Values.backend.ingress.host }}
             - name: CONVEX_SITE_ORIGIN
@@ -61,6 +79,10 @@ spec:
           volumeMounts:
             - mountPath: /convex/data
               name: convex-data
+            {{- if .Values.backend.cnpg.enabled }}
+            - mountPath: /etc/secrets/ca
+              name: cnpg-ca
+            {{- end }}
             {{- with .Values.backend.volumeMounts }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -85,6 +107,12 @@ spec:
           emptyDir:
             medium: ""
           {{- end }}
+        {{- if .Values.backend.cnpg.enabled }}
+        - name: cnpg-ca
+          secret:
+            secretName: {{ include "convex.backend.cnpg.name" . }}-ca
+            defaultMode: 0600
+        {{- end }}
         {{- with .Values.backend.volumes }}
           {{- toYaml . | nindent 8 }}
         {{- end }}

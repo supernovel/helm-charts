@@ -36,9 +36,9 @@ backend:
   service:
     type: ClusterIP
     port: 3210
-  environment:
-    - name: POSTGRES_URL
-      value: ""
+  environment: []
+  #   - name: POSTGRES_URL
+  #     value: ""
   ingress:
     enabled: true
     className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
@@ -67,6 +67,9 @@ backend:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
   persistence:
     enabled: false
     storageClassName: ""
@@ -74,9 +77,10 @@ backend:
     size: 10Gi
     accessModes:
       - ReadWriteOnce
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
+  cnpg:
+    enabled: false
+    instances: 1
+    size: 10Gi
 
 dashboard:
   image:

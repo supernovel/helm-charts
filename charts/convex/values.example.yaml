@@ -19,9 +19,13 @@ backend:
     requests:
       cpu: 500m
       memory: 1024Mi
-  persistence:
-    enabled: false
-    storageClassName: "local-path"
+  # persistence:
+  #   enabled: false
+  #   storageClassName: "local-path"
+  #   size: 10Gi
+  cnpg:
+    enabled: true
+    instances: 1
     size: 10Gi
 
 dashboard:
