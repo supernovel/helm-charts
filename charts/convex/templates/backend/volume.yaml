@@ -1,23 +1,23 @@
-{{- if .Values.backend.persistence.enabled -}}
+{{- if .Values.persistence.enabled -}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ include "convex.backend.fullname" . }}-pvc
   labels:
     {{- include "convex.labels" . | nindent 4 }}
-  {{- with .Values.backend.persistence.annotations }}
+  {{- with .Values.persistence.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.backend.persistence.storageClassName }}
-  storageClassName: {{ .Values.backend.persistence.storageClassName }}
+  {{- if .Values.persistence.storageClassName }}
+  storageClassName: {{ .Values.persistence.storageClassName }}
   {{- end }}
   accessModes:
-  {{- range .Values.backend.persistence.accessModes }}
+  {{- range .Values.persistence.accessModes }}
     - {{ . | quote }}
   {{- end }}
   resources:
     requests:
-      storage: {{ .Values.backend.persistence.size | quote }}
+      storage: {{ .Values.persistence.size | quote }}
 {{- end }}

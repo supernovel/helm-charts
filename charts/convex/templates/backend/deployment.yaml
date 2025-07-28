@@ -5,37 +5,37 @@ metadata:
   labels:
     {{- include "convex.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.backend.replicaCount }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "convex.backend.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.backend.podAnnotations }}
+      {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "convex.backend.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.backend.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "convex.backend.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.backend.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ include "convex.backend.name" $ }}
           securityContext:
-            {{- toYaml .Values.backend.securityContext | nindent 12 }}
-          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            {{- with .Values.backend.environment }}
+            {{- with .Values.environment }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
-            {{- if .Values.backend.cnpg.enabled }}
+            {{- if .Values.cnpg.enabled }}
             - name: CNPG_USER
               valueFrom:
                 secretKeyRef:
@@ -54,9 +54,9 @@ spec:
               value: "/etc/secrets/ca/ca.crt"
             {{- end }}
             - name: CONVEX_CLOUD_ORIGIN
-              value: https://{{ .Values.backend.ingress.host }}
+              value: https://{{ .Values.ingress.host }}
             - name: CONVEX_SITE_ORIGIN
-              value: https://{{ .Values.backend.ingress.host }}/http
+              value: https://{{ .Values.ingress.host }}/http
             - name: INSTANCE_SECRET
               valueFrom:
                 secretKeyRef:
@@ -72,48 +72,48 @@ spec:
             - name: http
               containerPort: 3210
               protocol: TCP
-          {{- with .Values.backend.resources }}
+          {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
             - mountPath: /convex/data
               name: convex-data
-            {{- if .Values.backend.cnpg.enabled }}
+            {{- if .Values.cnpg.enabled }}
             - mountPath: /etc/secrets/ca
               name: cnpg-ca
             {{- end }}
-            {{- with .Values.backend.volumeMounts }}
+            {{- with .Values.volumeMounts }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
-      {{- with .Values.backend.nodeSelector }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.backend.affinity }}
+      {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.backend.tolerations }}
+      {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
         - name: convex-data
-          {{- if .Values.backend.persistence.enabled }}
+          {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ include "convex.backend.fullname" . }}-pvc
           {{- else }}
           emptyDir:
             medium: ""
           {{- end }}
-        {{- if .Values.backend.cnpg.enabled }}
+        {{- if .Values.cnpg.enabled }}
         - name: cnpg-ca
           secret:
             secretName: {{ include "convex.backend.cnpg.name" . }}-ca
             defaultMode: 0600
         {{- end }}
-        {{- with .Values.backend.volumes }}
+        {{- with .Values.volumes }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         

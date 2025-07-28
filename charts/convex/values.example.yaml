@@ -1,48 +1,28 @@
-backend:
-  replicaCount: 1
-  environment:
-    - name: RUST_LOG
-      value: "info"
-  ingress:
-    enabled: true
-    className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
-    annotations: {
-      traefik.ingress.kubernetes.io/router.entrypoints: "websecure",
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    }
-    tls: "convex-api-tls"
-    host: api.convex.example.com
-  resources:
-    limits:
-      cpu: 1
-      memory: 2048Mi
-    requests:
-      cpu: 500m
-      memory: 1024Mi
-  # persistence:
-  #   enabled: false
-  #   storageClassName: "local-path"
-  #   size: 10Gi
-  cnpg:
-    enabled: true
-    instances: 1
-    size: 10Gi
-
-dashboard:
-  replicaCount: 1
-  ingress:
-    enabled: true
-    className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
-    annotations: {
-      traefik.ingress.kubernetes.io/router.entrypoints: "websecure",
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    }
-    tls: "convex-dashboard-tls"
-    host: dashboard.convex.example.com
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
+replicaCount: 1
+environment:
+  - name: RUST_LOG
+    value: "info"
+ingress:
+  enabled: true
+  className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
+  annotations: {
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure",
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  }
+  tls: "convex-api-tls"
+  host: api.convex.example.com
+resources:
+  limits:
+    cpu: 1
+    memory: 1024Mi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+persistence:
+  enabled: true
+  storageClassName: "local-path"
+  size: 10Gi
+# cnpg:
+#   enabled: true
+#   instances: 1
+#   size: 10Gi

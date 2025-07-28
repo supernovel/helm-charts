@@ -1,8 +1,6 @@
 ---
 Thank you for installing {{ .Chart.Name }}!
 
-Visit the dashboard at https://{{ .Values.dashboard.ingress.host }}
-
 Get the admin key by running:
 
 kubectl exec deploy/{{ include "convex.backend.fullname" . }} -it -n {{ .Release.Namespace }} -c {{ include "convex.backend.name" $ }} -- ./generate_admin_key.sh

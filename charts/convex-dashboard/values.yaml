@@ -1,16 +1,11 @@
-nameOverride: ""
-fullnameOverride: ""
-
-secret:
-  # openssl rand -hex 32
-  instanceSecret: ""
-
 image:
-  repository: ghcr.io/get-convex/convex-backend
+  repository: ghcr.io/get-convex/convex-dashboard
   pullPolicy: IfNotPresent
   tag: "6efab6f2b6c182b90255774d747328cfc7b80dd9"
 imagePullSecrets: []
 replicaCount: 1
+nameOverride: ""
+fullnameOverride: ""
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -31,16 +26,14 @@ securityContext: {}
   # runAsUser: 1000
 service:
   type: ClusterIP
-  port: 3210
+  port: 6791
 environment: []
-#   - name: POSTGRES_URL
-#     value: ""
 ingress:
   enabled: true
   className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
   annotations: {}
   tls: ""
-  host: api.example.com
+  host: dashboard.example.com
 volumeMounts: {}
 #   - name: volume_name
 #     mountPath: /path/to/my/secret
@@ -66,18 +59,3 @@ resources: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
-
-# Persistent storage configuration
-persistence:
-  enabled: false
-  storageClassName: ""
-  annotations: {}
-  size: 10Gi
-  accessModes:
-    - ReadWriteOnce
-
-# Convex Postgres configuration
-cnpg:
-  enabled: false
-  instances: 1
-  size: 10Gi

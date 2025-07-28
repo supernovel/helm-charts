@@ -1,0 +1,17 @@
+replicaCount: 1
+ingress:
+  enabled: true
+  className: "traefik" # Set to "nginx" if using NGINX Ingress Controller
+  annotations: {
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure",
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  }
+  tls: "convex-dashboard-tls"
+  host: dashboard.example.com
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

@@ -1,14 +1,14 @@
-{{- if .Values.backend.cnpg.enabled -}}
+{{- if .Values.cnpg.enabled -}}
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: {{ include "convex.backend.cnpg.name" . }}
 spec:
-  instances: {{ .Values.backend.cnpg.instances }}
+  instances: {{ .Values.cnpg.instances }}
   bootstrap:
     initdb:
       database: convex_self_hosted
       owner: app
   storage:
-    size: {{ .Values.backend.cnpg.size }}
+    size: {{ .Values.cnpg.size }}
 {{- end }}

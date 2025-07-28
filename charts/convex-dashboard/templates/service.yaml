@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "convex.backend.fullname" . }}
+  name: {{ include "dashboard.fullname" . }}
   labels:
-    {{- include "convex.labels" . | nindent 4 }}
+    {{- include "dashboard.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: 3210
+      targetPort: 6791
       protocol: TCP
       name: http
   selector:
-    {{- include "convex.backend.selectorLabels" . | nindent 4 }}
+    {{- include "dashboard.selectorLabels" . | nindent 4 }}
