@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/get-convex/convex-dashboard
   pullPolicy: IfNotPresent
-  tag: "6efab6f2b6c182b90255774d747328cfc7b80dd9"
+  tag: "00bd92723422f3bff968230c94ccdeb8c1719832"
 imagePullSecrets: []
 replicaCount: 1
 nameOverride: ""
