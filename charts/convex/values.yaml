@@ -8,7 +8,7 @@ secret:
 image:
   repository: ghcr.io/get-convex/convex-backend
   pullPolicy: IfNotPresent
-  tag: "00bd92723422f3bff968230c94ccdeb8c1719832"
+  tag: "4d3b0a5de955a258e70e3813bbff486051d88820"
 imagePullSecrets: []
 replicaCount: 1
 serviceAccount:
