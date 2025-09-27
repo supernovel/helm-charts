@@ -1,4 +1,5 @@
 {{- $fullName := include "convex.backend.fullname" . -}}
+{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -28,3 +29,4 @@ spec:
                 name: {{ $fullName }}
                 port:
                   number: {{ .Values.service.port }}
+{{- end }}
