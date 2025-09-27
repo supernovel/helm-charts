@@ -1,0 +1,36 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: dbeaver/cloudbeaver
+  pullPolicy: IfNotPresent
+  tag: ""
+
+environment: []
+
+service:
+  type: ClusterIP
+  port: 8978
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: cloudbeaver.example.com
+  tls: ""
+
+persistence: 
+  enabled: false
+  storageClassName: ""
+  annotations: {}
+  size: 5Gi
+  accessModes:
+    - ReadWriteOnce
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "50Mi"
+  limits:
+    cpu: "200m"
+    memory: "128Mi"

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cloudbeaver.fullname" . }}-deploy
+  labels:
+    {{- include "cloudbeaver.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "cloudbeaver.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "cloudbeaver.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: cloudbeaver
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - containerPort: 8978
+        env:
+          {{- if .Values.environment }}
+            {{- tpl (toYaml .Values.environment) $ | nindent 10 }}
+          {{- end }}
+        {{- if .Values.persistence.enabled }}
+        volumeMounts:
+          - name: cloudbeaver-data
+            mountPath: /opt/cloudbeaver/workspace
+        {{- end }}
+        resources:
+          {{- with .Values.resources }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: cloudbeaver-data
+          persistentVolumeClaim:
+            claimName: {{ include "cloudbeaver.fullname" . }}-pvc
+      {{- end }}

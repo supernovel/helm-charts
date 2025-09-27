@@ -1,0 +1,17 @@
+---
+Thank you for installing {{ .Chart.Name }}!
+
+{{ if .Values.ingress.enabled }}
+You can access CloudBeaver at: https://{{ .Values.ingress.host }}
+{{- else }}
+To access CloudBeaver, run the following command to forward the port:
+
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "cloudbeaver.fullname" . }} 8978:{{ .Values.service.port }}
+
+Then access CloudBeaver at: http://localhost:8978
+{{- end }}
+
+Open in your browser to launch the easy config wizard.
+
+For more configuration options, see the values.yaml file.
+

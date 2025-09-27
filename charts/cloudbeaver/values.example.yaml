@@ -1,0 +1,17 @@
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations: {
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure",
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  }
+  tls: "cloudbeaver-tls"
+  host: cloudbeaver.example.com
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "50Mi"
+  limits:
+    cpu: "200m"
+    memory: "128Mi"
