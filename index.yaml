@@ -3,6 +3,17 @@ entries:
   cloudbeaver:
   - apiVersion: v2
     appVersion: 24.3.5
+    created: "2025-09-27T08:22:34.172945026Z"
+    description: A Helm chart for cloudbeaver
+    digest: a2c96fa936426543a0b6fe08a00f375f0389690d90612b72351b476db9869fbd
+    icon: https://avatars.githubusercontent.com/u/34743864?s=96&v=4
+    name: cloudbeaver
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/cloudbeaver-0.1.1/cloudbeaver-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 24.3.5
     created: "2025-09-27T08:12:25.344914746Z"
     description: A Helm chart for cloudbeaver
     digest: a6a5902d18b395cc0fec218d2baa4a2935a177cbfd294d9760934e562a87687f
@@ -414,4 +425,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2025-09-27T08:12:26.254809457Z"
+generated: "2025-09-27T08:22:34.173046455Z"
