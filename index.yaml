@@ -310,6 +310,30 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/directus-0.1.0/directus-0.1.0.tgz
     version: 0.1.0
+  forgejo:
+  - apiVersion: v2
+    appVersion: 13.0.1
+    created: "2025-10-21T14:14:32.639038732Z"
+    description: Forgejo Helm chart for Kubernetes
+    digest: 3e86b4f55fd22802bc43afcc8d6ca6c656e5f15b9c46762faede085b708b06ac
+    home: https://forgejo.org/
+    icon: https://code.forgejo.org/forgejo/forgejo/raw/branch/forgejo/assets/logo.svg
+    keywords:
+    - git
+    - issue tracker
+    - code review
+    - wiki
+    - forgejo
+    - gitea
+    - gogs
+    name: forgejo
+    sources:
+    - https://code.forgejo.org/forgejo-helm/forgejo-helm
+    - https://codeberg.org/forgejo/forgejo
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/forgejo-0.1.0/forgejo-0.1.0.tgz
+    version: 0.1.0
   pocketbase:
   - apiVersion: v2
     appVersion: 1.0.0
@@ -425,4 +449,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2025-09-27T08:22:34.173046455Z"
+generated: "2025-10-21T14:14:32.639139441Z"
