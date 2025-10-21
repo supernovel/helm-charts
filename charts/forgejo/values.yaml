@@ -61,9 +61,15 @@ ingress:
   #      - chart-example.local
 
 # Environment variables to pass to the container
-env: {}
-  # FORGEJO____APP_NAME=Frogejo 🐸
-  # FORGEJO__repository__ENABLE_PUSH_CREATE_USER=true
+env: []
+  # - name: FORGEJO____APP_NAME
+  #   value: "Frogejo 🐸"
+  # - name: FORGEJO__repository__ENABLE_PUSH_CREATE_USER
+  #   value: "true"
+  # - name: FORGEJO__service__DISABLE_REGISTRATION
+  #   value: "true"
+  # - name: FORGEJO__service_explorer__REQUIRE_SIGNIN_VIEW
+  #   value: "true"
 
 # Environment variables from ConfigMaps or Secrets
 envFrom: []

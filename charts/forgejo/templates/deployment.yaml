@@ -54,10 +54,7 @@ spec:
             - name: FORGEJO__database__DB_TYPE
               value: "sqlite3"
             {{- with .Values.env }}
-            {{- range $key, $value := . }}
-            - name: {{ $key }}
-              value: {{ $value | quote }}
-            {{- end }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- with .Values.envFrom }}
           envFrom:
