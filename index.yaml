@@ -313,6 +313,29 @@ entries:
   forgejo:
   - apiVersion: v2
     appVersion: 13.0.1
+    created: "2025-10-21T15:46:48.134675457Z"
+    description: Forgejo Helm chart for Kubernetes
+    digest: 3e96c979a65df740bc8e65ad7c407dd8aaf19564358039b3c2a91d1f4532e4ce
+    home: https://forgejo.org/
+    icon: https://code.forgejo.org/forgejo/forgejo/raw/branch/forgejo/assets/logo.svg
+    keywords:
+    - git
+    - issue tracker
+    - code review
+    - wiki
+    - forgejo
+    - gitea
+    - gogs
+    name: forgejo
+    sources:
+    - https://code.forgejo.org/forgejo-helm/forgejo-helm
+    - https://codeberg.org/forgejo/forgejo
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/forgejo-0.1.1/forgejo-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 13.0.1
     created: "2025-10-21T14:14:32.639038732Z"
     description: Forgejo Helm chart for Kubernetes
     digest: 3e86b4f55fd22802bc43afcc8d6ca6c656e5f15b9c46762faede085b708b06ac
@@ -449,4 +472,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2025-10-21T14:14:32.639139441Z"
+generated: "2025-10-21T15:46:48.13475942Z"
