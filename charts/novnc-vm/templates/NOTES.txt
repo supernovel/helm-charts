@@ -1,0 +1,94 @@
+=============================================================
+  Debian VM — KubeVirt + noVNC
+=============================================================
+
+VirtualMachine: {{ include "novnc-vm.fullname" . }}
+Namespace:      {{ .Release.Namespace }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  VM STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Wait for the DataVolume import to complete before the VM starts:
+
+    kubectl get datavolume -n {{ .Release.Namespace }} {{ include "novnc-vm.fullname" . }}-rootdisk
+
+  Check VM status:
+
+    kubectl get vm -n {{ .Release.Namespace }} {{ include "novnc-vm.fullname" . }}
+    kubectl get vmi -n {{ .Release.Namespace }} {{ include "novnc-vm.fullname" . }}
+
+  Start/Stop the VM:
+
+    virtctl start  {{ include "novnc-vm.fullname" . }} -n {{ .Release.Namespace }}
+    virtctl stop   {{ include "novnc-vm.fullname" . }} -n {{ .Release.Namespace }}
+    virtctl restart {{ include "novnc-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  noVNC WEB CONSOLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if .Values.novnc.enabled }}
+  noVNC Deployment: {{ include "novnc-vm.novncName" . }}
+  Service:          {{ include "novnc-vm.novncName" . }}:{{ .Values.novnc.service.port }}
+
+{{- if .Values.novnc.httpRoute.enabled }}
+  HTTPRoute hostname(s):
+  {{- range .Values.novnc.httpRoute.hostnames }}
+    http://{{ . }}
+  {{- end }}
+
+{{- else if .Values.novnc.ingress.enabled }}
+  Ingress URL(s):
+  {{- range .Values.novnc.ingress.hosts }}
+  {{- range .paths }}
+    http{{ if $.Values.novnc.ingress.tls }}s{{ end }}://{{ $.host }}{{ .path }}
+  {{- end }}
+  {{- end }}
+
+{{- else if eq .Values.novnc.service.type "NodePort" }}
+  Access via NodePort:
+    export NODE_PORT=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "novnc-vm.novncName" . }} \
+      -o jsonpath="{.spec.ports[0].nodePort}")
+    export NODE_IP=$(kubectl get nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+    echo "noVNC console: http://$NODE_IP:$NODE_PORT"
+
+{{- else if eq .Values.novnc.service.type "LoadBalancer" }}
+  Access via LoadBalancer (may take a few minutes):
+    export LB_IP=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "novnc-vm.novncName" . }} \
+      -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+    echo "noVNC console: http://$LB_IP:{{ .Values.novnc.service.port }}"
+
+{{- else }}
+  Port-forward to access the noVNC console locally:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "novnc-vm.novncName" . }} 8080:{{ .Values.novnc.service.port }}
+
+    Then open: http://localhost:8080
+
+{{- end }}
+
+  Default VM credentials (change in cloudInit.userData!):
+    Username: debian
+    Password: debian
+
+  VNC directly via virtctl (CLI):
+    virtctl vnc {{ include "novnc-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+  SSH into the VM (requires SSH service and network route):
+    virtctl ssh debian@{{ include "novnc-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+{{- else }}
+  noVNC is disabled. Enable it with --set novnc.enabled=true
+  and access the VM console via virtctl:
+
+    virtctl vnc {{ include "novnc-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PREREQUISITES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • KubeVirt : https://kubevirt.io/
+  • CDI       : https://github.com/kubevirt/containerized-data-importer
+  • virtctl   : https://kubevirt.io/quickstart_minikube/#install-virtctl

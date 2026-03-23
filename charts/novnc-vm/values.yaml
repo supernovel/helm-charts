@@ -1,0 +1,204 @@
+# Default values for novnc-vm.
+# This is a YAML-formatted file.
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full chart name
+fullnameOverride: ""
+
+# ==============================================================================
+# VirtualMachine Configuration (KubeVirt)
+# Prerequisites:
+#   - KubeVirt installed (https://kubevirt.io/)
+#   - CDI (Containerized Data Importer) installed for disk image import
+# ==============================================================================
+vm:
+  # Whether the VM should be in running state after deployment
+  running: true
+
+  # Instance type — CPU and memory are defined by the VirtualMachineClusterInstancetype
+  # Common instancetypes (requires kubevirt/common-instancetypes to be installed):
+  #   u1.nano   : 1 vCPU,  512Mi
+  #   u1.micro  : 1 vCPU,    1Gi
+  #   u1.small  : 1 vCPU,    2Gi
+  #   u1.medium : 1 vCPU,    4Gi
+  #   u1.large  : 2 vCPU,    8Gi
+  #   u1.xlarge : 4 vCPU,   16Gi
+  #   u1.2xlarge: 8 vCPU,   32Gi
+  # Ref: https://github.com/kubevirt/common-instancetypes
+  instancetype:
+    # VirtualMachineClusterInstancetype (cluster-scoped) or VirtualMachineInstancetype (namespace-scoped)
+    kind: VirtualMachineClusterInstancetype
+    name: u1.nano
+
+  # Preference — defines guest OS optimizations (disk bus, network model, etc.).
+  # Leave name empty to skip.
+  preference:
+    kind: VirtualMachineClusterPreference
+    name: "debian"
+
+  # Root disk configuration (backed by a CDI DataVolume)
+  disk:
+    # Root disk size
+    size: "10Gi"
+    # Storage class for the DataVolume PVC (empty = cluster default)
+    storageClassName: ""
+    # PVC access mode: ReadWriteOnce or ReadWriteMany (for live migration)
+    accessMode: "ReadWriteOnce"
+    # Debian 12 (Bookworm) generic cloud image URL
+    # CDI will import this image via HTTP during DataVolume creation
+    imageUrl: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
+
+  # Cloud-init configuration injected via NoCloud datasource
+  cloudInit:
+    enabled: true
+    # cloud-config user data
+    # Default: creates 'debian' user (password: debian) and installs qemu-guest-agent
+    # Change the password hash in production!
+    userData: |
+      #cloud-config
+      hostname: novnc-vm
+      users:
+        - name: debian
+          groups: sudo
+          shell: /bin/bash
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          lock_passwd: false
+      chpasswd:
+        list: "debian:debian"
+        expire: false
+      ssh_pwauth: true
+      packages:
+        - qemu-guest-agent
+      runcmd:
+        - systemctl enable --now qemu-guest-agent
+
+  # Network interface type
+  # masquerade: NAT-based networking using the pod network (recommended)
+  # bridge:     Direct bridge networking (requires NetworkAttachmentDefinition)
+  network:
+    type: masquerade
+
+  # Eviction strategy for node maintenance / live migration
+  # LiveMigrate: migrate VM to another node instead of shutting down
+  # None: do not evict
+  evictionStrategy: "LiveMigrate"
+
+  # VM pod scheduling constraints
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# ==============================================================================
+# noVNC Web Console Configuration
+#
+# Architecture:
+#   Browser → nginx (noVNC HTML + WebSocket proxy) → kubectl-proxy → KubeVirt VNC API → VM
+#
+# Containers in the noVNC pod:
+#   1. init (alpine): downloads noVNC static files at startup
+#   2. kubectl-proxy: authenticates to K8s API using the ServiceAccount token
+#   3. novnc-server (nginx): serves noVNC UI and proxies WebSocket to kubectl-proxy
+# ==============================================================================
+novnc:
+  # Enable noVNC web console
+  enabled: true
+
+  # noVNC release version downloaded from GitHub at pod startup
+  # Ref: https://github.com/novnc/noVNC/releases
+  version: "1.4.0"
+
+  # Container images
+  image:
+    # kubectl proxy sidecar: authenticates requests to the KubeVirt VNC API
+    proxy:
+      repository: "rancher/kubectl"
+      tag: "v1.34.5"
+      pullPolicy: IfNotPresent
+    # nginx: serves noVNC static files and proxies WebSocket to KubeVirt
+    server:
+      repository: "nginx"
+      tag: "1.28.2-alpine-perl"
+      pullPolicy: IfNotPresent
+    # Init container: downloads noVNC static files from GitHub at pod start
+    init:
+      repository: "alpine"
+      tag: "3.19"
+      pullPolicy: IfNotPresent
+
+  # Image pull secrets for private registries
+  imagePullSecrets: []
+
+  # Service configuration for the noVNC web UI
+  service:
+    # ClusterIP, NodePort, or LoadBalancer
+    type: ClusterIP
+    port: 8080
+
+  # Ingress for external HTTP access to the noVNC console
+  # For WebSocket support, add proxy-read-timeout and proxy-send-timeout annotations
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+      # nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      # nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      # nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    hosts:
+      - host: novnc-vm.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+    #  - secretName: novnc-vm-tls
+    #    hosts:
+    #      - novnc-vm.example.com
+
+  # Gateway API HTTPRoute (alternative to Ingress)
+  # Requires: Gateway API CRDs and a compatible Gateway controller
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        sectionName: http
+        # namespace: default
+    hostnames:
+      - novnc-vm.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+  # Resource limits for noVNC containers (kubectl-proxy + nginx)
+  resources: {}
+    # limits:
+    #   cpu: 200m
+    #   memory: 256Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # Additional pod annotations and labels for the noVNC deployment
+  podAnnotations: {}
+  podLabels: {}
+
+  # noVNC pod scheduling constraints
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# ==============================================================================
+# RBAC — ServiceAccount for the noVNC kubectl-proxy sidecar
+# The ServiceAccount is granted read access to VirtualMachineInstance VNC subresource
+# ==============================================================================
+serviceAccount:
+  # Create a dedicated ServiceAccount
+  create: true
+  # Annotations (e.g., for IRSA / Workload Identity)
+  annotations: {}
+  # Name override; defaults to the chart fullname if empty
+  name: ""
+  # Automount the ServiceAccount API token into the pod
+  automount: true

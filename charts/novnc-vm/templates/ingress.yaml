@@ -1,0 +1,44 @@
+{{- if and .Values.novnc.enabled .Values.novnc.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "novnc-vm.novncName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "novnc-vm.novncLabels" . | nindent 4 }}
+  {{- with .Values.novnc.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.novnc.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.novnc.ingress.tls }}
+  tls:
+    {{- range .Values.novnc.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.novnc.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- with .pathType }}
+            pathType: {{ . }}
+            {{- end }}
+            backend:
+              service:
+                name: {{ include "novnc-vm.novncName" $ }}
+                port:
+                  number: {{ $.Values.novnc.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}

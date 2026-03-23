@@ -1,0 +1,15 @@
+apiVersion: v2
+name: novnc-vm
+description: >
+  Debian Virtual Machine deployment using KubeVirt with noVNC web console access.
+  Requires KubeVirt and CDI (Containerized Data Importer) installed in the cluster.
+type: application
+version: 0.1.0
+appVersion: "12"
+keywords:
+  - kubevirt
+  - virtualization
+  - debian
+  - novnc
+  - vm
+  - kvm

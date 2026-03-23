@@ -1,0 +1,187 @@
+{{/*
+Deployment for the noVNC web console proxy.
+
+Pod contains three containers:
+  1. init/download-novnc  — Downloads noVNC static files from GitHub into a shared volume.
+  2. kubectl-proxy        — Runs `kubectl proxy` to forward authenticated K8s API calls from
+                            localhost. The ServiceAccount token grants access to the KubeVirt
+                            VNC subresource only (see role.yaml).
+  3. novnc-server (nginx) — Serves the noVNC web UI and proxies /k8s/ WebSocket traffic to
+                            the kubectl-proxy listening on 127.0.0.1:8001.
+
+Connection flow:
+  Browser ──HTTP+WS──> nginx:8080 (/k8s/) ──WS──> kubectl-proxy:8001 ──> KubeVirt API ──> VM VNC
+*/}}
+{{- if .Values.novnc.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "novnc-vm.novncName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "novnc-vm.novncLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "novnc-vm.novncSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.novnc.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "novnc-vm.novncLabels" . | nindent 8 }}
+        {{- with .Values.novnc.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.novnc.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "novnc-vm.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+
+      # -----------------------------------------------------------------------
+      # Init container: downloads noVNC static files from GitHub
+      # In air-gapped environments, mirror the release tarball to an internal
+      # registry and update the download URL, or pre-bake the files into your
+      # own image and use an initContainer that copies them instead.
+      # -----------------------------------------------------------------------
+      initContainers:
+        - name: download-novnc
+          image: "{{ .Values.novnc.image.init.repository }}:{{ .Values.novnc.image.init.tag }}"
+          imagePullPolicy: {{ .Values.novnc.image.init.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              NOVNC_VERSION="{{ .Values.novnc.version }}"
+              echo "Downloading noVNC v${NOVNC_VERSION} ..."
+              wget -q -O /tmp/novnc.tar.gz \
+                "https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz"
+              tar -xzf /tmp/novnc.tar.gz -C /tmp/
+              cp -r "/tmp/noVNC-${NOVNC_VERSION}/." /novnc/
+              echo "noVNC ready."
+          volumeMounts:
+            - name: novnc-files
+              mountPath: /novnc
+
+      containers:
+        # -------------------------------------------------------------------
+        # Container 1: kubectl proxy
+        # Listens on 127.0.0.1:8001 and forwards API requests to the cluster
+        # using the ServiceAccount token.  Accepts any Host header (traffic
+        # only comes from the co-located nginx container via loopback).
+        # -------------------------------------------------------------------
+        - name: kubectl-proxy
+          image: "{{ .Values.novnc.image.proxy.repository }}:{{ .Values.novnc.image.proxy.tag }}"
+          imagePullPolicy: {{ .Values.novnc.image.proxy.pullPolicy }}
+          command:
+            - kubectl
+            - proxy
+            - --port=8001
+            - --address=127.0.0.1
+            - --accept-hosts=^127\.0\.0\.1$,^localhost$
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: ["ALL"]
+
+        # -------------------------------------------------------------------
+        # Container 2: nginx — noVNC web server + WebSocket proxy
+        # Serves noVNC static files at / and proxies /k8s/ to kubectl-proxy.
+        # -------------------------------------------------------------------
+        - name: novnc-server
+          image: "{{ .Values.novnc.image.server.repository }}:{{ .Values.novnc.image.server.tag }}"
+          imagePullPolicy: {{ .Values.novnc.image.server.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          {{- with .Values.novnc.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            # noVNC static files downloaded by the init container
+            - name: novnc-files
+              mountPath: /usr/share/nginx/html
+            # nginx site configuration (WebSocket proxy to kubectl-proxy)
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: nginx.conf
+            # Custom index.html with auto-redirect to the VM console
+            - name: novnc-index
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+            # nginx needs a writable tmp dir when running as non-root
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: nginx-run
+              mountPath: /var/run
+
+      volumes:
+        # Shared volume for noVNC static files (init → nginx)
+        - name: novnc-files
+          emptyDir: {}
+        # nginx site configuration from ConfigMap
+        - name: nginx-config
+          configMap:
+            name: {{ include "novnc-vm.novncName" . }}-config
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+        # Custom index.html from ConfigMap
+        - name: novnc-index
+          configMap:
+            name: {{ include "novnc-vm.novncName" . }}-config
+            items:
+              - key: index.html
+                path: index.html
+        - name: nginx-tmp
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+
+      {{- with .Values.novnc.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.novnc.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.novnc.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
