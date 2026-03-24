@@ -27,6 +27,10 @@ spec:
       matches:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .filters }}
+      filters:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       backendRefs:
         - name: {{ $svcName }}
           port: {{ $svcPort }}
