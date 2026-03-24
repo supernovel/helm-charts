@@ -357,6 +357,46 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/forgejo-0.1.0/forgejo-0.1.0.tgz
     version: 0.1.0
+  kasm:
+  - annotations:
+      category: Virtual Desktop
+      images: |
+        - name: kasm-api
+          image: kasmweb/api:1.18.1
+        - name: kasm-manager
+          image: kasmweb/manager:1.18.1
+        - name: kasm-db
+          image: kasmweb/postgres:1.18.1
+        - name: kasm-proxy
+          image: kasmweb/proxy:1.18.1
+        - name: kasm-guac
+          image: kasmweb/kasm-guac:1.18.1
+        - name: rdp-gateway
+          image: kasmweb/rdp-gateway:1.18.1
+        - name: rdp-gateway
+          image: kasmweb/rdp-https-gateway:1.18.1
+    apiVersion: v2
+    appVersion: 1.18.1
+    created: "2026-03-24T11:37:43.473396887Z"
+    description: Kasm is a platform specializing in providing secure browser-based
+      workspaces for a wide range of applications and industries. Its main goal is
+      to provide isolated and secure environments that can be accessed via web browsers,
+      ensuring that users can perform tasks without risking the security of their
+      local systems.
+    digest: 4811bf652d9efdf328482006ac431b98916ebd157235b9e7cfea4e1565125ad7
+    home: https://kasm.com
+    icon: https://kasm-static-content.s3.amazonaws.com/icons/kasm-logo-small.png
+    keywords:
+    - kasm
+    - vdi
+    - workspaces
+    maintainers:
+    - name: Kasm Technologies, Inc.
+      url: https://github.com/kasmtech/kasm-helm
+    name: kasm
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/kasm-1.1181.0/kasm-1.1181.0.tgz
+    version: 1.1181.0
   novnc-vm:
   - apiVersion: v2
     appVersion: "12"
@@ -511,4 +551,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2026-03-23T07:57:47.771138256Z"
+generated: "2026-03-24T11:37:43.473545392Z"
