@@ -400,6 +400,25 @@ entries:
   novnc-vm:
   - apiVersion: v2
     appVersion: "12"
+    created: "2026-03-25T01:57:11.792423893Z"
+    description: 'Debian Virtual Machine deployment using KubeVirt with noVNC web
+      console access. Requires KubeVirt and CDI (Containerized Data Importer) installed
+      in the cluster. '
+    digest: 5d410df0e313c550cf80d686f0f61a9cab6e46605ca4c6073ad3ca3ee9f78468
+    keywords:
+    - kubevirt
+    - virtualization
+    - debian
+    - novnc
+    - vm
+    - kvm
+    name: novnc-vm
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/novnc-vm-0.1.3/novnc-vm-0.1.3.tgz
+    version: 0.1.3
+  - apiVersion: v2
+    appVersion: "12"
     created: "2026-03-24T13:20:00.022031895Z"
     description: 'Debian Virtual Machine deployment using KubeVirt with noVNC web
       console access. Requires KubeVirt and CDI (Containerized Data Importer) installed
@@ -570,4 +589,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2026-03-24T13:20:00.022140458Z"
+generated: "2026-03-25T01:57:11.792522477Z"
