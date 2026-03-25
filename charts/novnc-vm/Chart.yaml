@@ -4,7 +4,7 @@ description: >
   Debian Virtual Machine deployment using KubeVirt with noVNC web console access.
   Requires KubeVirt and CDI (Containerized Data Importer) installed in the cluster.
 type: application
-version: 0.1.3
+version: 0.1.4
 appVersion: "12"
 keywords:
   - kubevirt
