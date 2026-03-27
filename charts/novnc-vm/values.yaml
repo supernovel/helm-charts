@@ -70,14 +70,37 @@ vm:
       ssh_pwauth: true
       packages:
         - qemu-guest-agent
+        - spice-vdagent
       runcmd:
         - systemctl enable --now qemu-guest-agent
+        - systemctl enable --now spice-vdagentd
 
   # Network interface type
   # masquerade: NAT-based networking using the pod network (recommended)
   # bridge:     Direct bridge networking (requires NetworkAttachmentDefinition)
   network:
     type: masquerade
+
+  # ---------------------------------------------------------------------------
+  # Clipboard copy-paste support (requires KubeVirt Sidecar feature gate)
+  #
+  # Enables VNC clipboard by injecting a qemu-vdagent channel into the libvirt
+  # domain XML via a KubeVirt sidecar hook.  The guest must have spice-vdagent
+  # installed (added to cloud-init packages by default when enabled).
+  #
+  # Prerequisites:
+  #   - KubeVirt >= 1.2.0
+  #   - Sidecar feature gate enabled in KubeVirt configuration
+  #   - spice-vdagent installed and running inside the guest OS
+  #
+  # NOTE: qemu-vdagent does NOT support live migration. Enabling clipboard
+  #       will make the VM non-migratable.
+  # Ref: https://github.com/kubevirt/kubevirt/issues/10306
+  # ---------------------------------------------------------------------------
+  clipboard:
+    enabled: false
+    # Sidecar shim image used to inject the libvirt domain XML hook
+    sidecarImage: "quay.io/kubevirt/sidecar-shim:20260327_b27daac1bc"
 
   # Eviction strategy for node maintenance / live migration
   # LiveMigrate: migrate VM to another node instead of shutting down

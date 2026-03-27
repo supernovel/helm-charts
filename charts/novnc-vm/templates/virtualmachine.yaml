@@ -56,6 +56,10 @@ spec:
 
   template:
     metadata:
+      {{- if .Values.vm.clipboard.enabled }}
+      annotations:
+        hooks.kubevirt.io/hookSidecars: '[{"args": ["--version", "v1alpha3"], "image":"{{ .Values.vm.clipboard.sidecarImage }}", "configMap": {"name": "{{ include "novnc-vm.fullname" . }}-clipboard", "key": "clipboard_hook.sh", "hookPath": "/usr/bin/onDefineDomain"}}]'
+      {{- end }}
       labels:
         kubevirt.io/domain: {{ include "novnc-vm.fullname" . }}
         {{- include "novnc-vm.selectorLabels" . | nindent 8 }}
