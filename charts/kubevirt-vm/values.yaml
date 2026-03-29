@@ -136,8 +136,8 @@ novnc:
     # websockify: WebSocket-to-TCP bridge, used when mode=vnc
     # Ref: https://github.com/novnc/websockify
     websockify:
-      repository: "ghcr.io/novnc/websockify"
-      tag: "v0.11.0"
+      repository: "supernovel/novnc-websockify"
+      tag: "v0.13.0"
       pullPolicy: IfNotPresent
 
   # Image pull secrets for private registries
