@@ -1,0 +1,135 @@
+=============================================================
+  Debian VM — KubeVirt + noVNC
+=============================================================
+
+VirtualMachine: {{ include "kubevirt-vm.fullname" . }}
+Namespace:      {{ .Release.Namespace }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  VM STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Wait for the DataVolume import to complete before the VM starts:
+
+    kubectl get datavolume -n {{ .Release.Namespace }} {{ include "kubevirt-vm.fullname" . }}-rootdisk
+
+  Check VM status:
+
+    kubectl get vm -n {{ .Release.Namespace }} {{ include "kubevirt-vm.fullname" . }}
+    kubectl get vmi -n {{ .Release.Namespace }} {{ include "kubevirt-vm.fullname" . }}
+
+  Start/Stop the VM:
+
+    virtctl start  {{ include "kubevirt-vm.fullname" . }} -n {{ .Release.Namespace }}
+    virtctl stop   {{ include "kubevirt-vm.fullname" . }} -n {{ .Release.Namespace }}
+    virtctl restart {{ include "kubevirt-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  noVNC WEB CONSOLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if or .Values.novnc.admin.enabled .Values.novnc.guest.enabled }}
+{{- if .Values.novnc.guest.enabled }}
+  Deployment: {{ include "kubevirt-vm.consoleName" . }}
+  Service:    {{ include "kubevirt-vm.consoleName" . }}:{{ .Values.novnc.service.port }}
+{{- end }}
+{{- if .Values.novnc.admin.enabled }}
+
+  [admin-novnc] QEMU VNC — kubectl-proxy → KubeVirt VNC subresource API
+    Admin/debug only. Runs in a dedicated pod with NO Service attached.
+    External access is blocked. Use pod port-forward:
+
+      # Get the admin pod name
+      POD=$(kubectl get pod -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "kubevirt-vm.adminConsoleName" . }} \
+        -o jsonpath="{.items[0].metadata.name}")
+
+      kubectl port-forward -n {{ .Release.Namespace }} pod/$POD 8080:8080
+
+      Then open:
+        http://localhost:8080/vnc.html?path=k8s/apis/subresources.kubevirt.io/v1/namespaces/{{ .Release.Namespace }}/virtualmachineinstances/{{ include "kubevirt-vm.fullname" . }}/vnc&autoconnect=true
+{{- end }}
+{{- if .Values.novnc.guest.enabled }}
+
+  [guest-novnc] In-guest VNC — websockify → VM Service → in-guest VNC server
+    Primary user-facing access. Full clipboard support.
+    Requires: novnc.guest.enabled=true + in-guest VNC server running in the VM (port 5900).
+{{- end }}
+
+{{- if .Values.novnc.httpRoute.enabled }}
+  HTTPRoute hostname(s):
+  {{- range .Values.novnc.httpRoute.hostnames }}
+    http://{{ . }}
+  {{- end }}
+
+{{- else if eq .Values.novnc.service.type "NodePort" }}
+  Access via NodePort:
+    export NODE_PORT=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "kubevirt-vm.consoleName" . }} \
+      -o jsonpath="{.spec.ports[0].nodePort}")
+    export NODE_IP=$(kubectl get nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+    echo "noVNC console: http://$NODE_IP:$NODE_PORT"
+
+{{- else if eq .Values.novnc.service.type "LoadBalancer" }}
+  Access via LoadBalancer (may take a few minutes):
+    export LB_IP=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "kubevirt-vm.consoleName" . }} \
+      -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+    echo "noVNC console: http://$LB_IP:{{ .Values.novnc.service.port }}"
+
+{{- else }}
+  Port-forward to access the noVNC console locally:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "kubevirt-vm.consoleName" . }} 8080:{{ .Values.novnc.service.port }}
+
+    Then open: http://localhost:8080
+
+{{- end }}
+
+  Default VM credentials (change in cloudInit.userData!):
+    Username: debian
+    Password: debian
+
+  QEMU VNC via virtctl (CLI):
+    virtctl vnc {{ include "kubevirt-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+  SSH into the VM via virtctl (CLI):
+    virtctl ssh debian@{{ include "kubevirt-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+{{- else }}
+  noVNC is disabled. Enable novnc.guest.enabled or novnc.admin.enabled.
+  Access the VM console via virtctl:
+
+    virtctl vnc {{ include "kubevirt-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+{{- end }}
+{{- if .Values.webssh.enabled }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  WEB SSH TERMINAL (wetty)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Deployment: {{ include "kubevirt-vm.fullname" . }}-webssh
+  Service:    {{ include "kubevirt-vm.fullname" . }}-webssh:{{ .Values.webssh.service.port }}
+  SSH user:   {{ .Values.webssh.sshUser | default .Values.vm.cloudInit.user.name }}
+
+{{- if .Values.webssh.httpRoute.enabled }}
+  HTTPRoute hostname(s):
+  {{- range .Values.webssh.httpRoute.hostnames }}
+    http://{{ . }}
+  {{- end }}
+
+{{- else }}
+  Port-forward to access the web SSH terminal locally:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "kubevirt-vm.fullname" . }}-webssh 3000:{{ .Values.webssh.service.port }}
+
+    Then open: http://localhost:3000
+
+{{- end }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PREREQUISITES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • KubeVirt : https://kubevirt.io/
+  • CDI       : https://github.com/kubevirt/containerized-data-importer
+  • virtctl   : https://kubevirt.io/quickstart_minikube/#install-virtctl

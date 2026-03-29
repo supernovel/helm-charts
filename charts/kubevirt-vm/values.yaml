@@ -1,4 +1,4 @@
-# Default values for novnc-vm.
+# Default values for kubevirt-vm.
 # This is a YAML-formatted file.
 
 # -- Override the chart name
@@ -52,55 +52,26 @@ vm:
   # Cloud-init configuration injected via NoCloud datasource
   cloudInit:
     enabled: true
-    # cloud-config user data
-    # Default: creates 'debian' user (password: debian) and installs qemu-guest-agent
-    # Change the password hash in production!
-    userData: |
-      #cloud-config
-      hostname: novnc-vm
-      users:
-        - name: debian
-          groups: sudo
-          shell: /bin/bash
-          sudo: ALL=(ALL) NOPASSWD:ALL
-          lock_passwd: false
-      chpasswd:
-        list: "debian:debian"
-        expire: false
-      ssh_pwauth: true
-      packages:
-        - qemu-guest-agent
-        - spice-vdagent
-      runcmd:
-        - systemctl enable --now qemu-guest-agent
-        - systemctl enable --now spice-vdagentd
+    # Guest OS user created at first boot
+    user:
+      name: debian
+      # Plain-text password (change in production!)
+      password: debian
+    # Additional packages to install alongside qemu-guest-agent.
+    # Note: tigervnc-standalone-server is added automatically when novnc.guest.enabled=true.
+    #       openssh-server is pre-installed in Debian cloud images (webssh.enabled requires no extra package).
+    packages: []
+      # - some-extra-package
+    # Additional runcmd entries run after qemu-guest-agent activation.
+    # Note: vncserver@:1 is enabled automatically when novnc.guest.enabled=true.
+    runcmd: []
+      # - some-extra-command
 
   # Network interface type
   # masquerade: NAT-based networking using the pod network (recommended)
   # bridge:     Direct bridge networking (requires NetworkAttachmentDefinition)
   network:
     type: masquerade
-
-  # ---------------------------------------------------------------------------
-  # Clipboard copy-paste support (requires KubeVirt Sidecar feature gate)
-  #
-  # Enables VNC clipboard by injecting a qemu-vdagent channel into the libvirt
-  # domain XML via a KubeVirt sidecar hook.  The guest must have spice-vdagent
-  # installed (added to cloud-init packages by default when enabled).
-  #
-  # Prerequisites:
-  #   - KubeVirt >= 1.2.0
-  #   - Sidecar feature gate enabled in KubeVirt configuration
-  #   - spice-vdagent installed and running inside the guest OS
-  #
-  # NOTE: qemu-vdagent does NOT support live migration. Enabling clipboard
-  #       will make the VM non-migratable.
-  # Ref: https://github.com/kubevirt/kubevirt/issues/10306
-  # ---------------------------------------------------------------------------
-  clipboard:
-    enabled: false
-    # Sidecar shim image used to inject the libvirt domain XML hook
-    sidecarImage: "quay.io/kubevirt/sidecar-shim:20260327_b27daac1bc"
 
   # Eviction strategy for node maintenance / live migration
   # LiveMigrate: migrate VM to another node instead of shutting down
@@ -115,17 +86,31 @@ vm:
 # ==============================================================================
 # noVNC Web Console Configuration
 #
-# Architecture:
-#   Browser → nginx (noVNC HTML + WebSocket proxy) → kubectl-proxy → KubeVirt VNC API → VM
+# Two separate Deployments, each with nginx + a dedicated sidecar:
 #
-# Containers in the noVNC pod:
-#   1. init (alpine): downloads noVNC static files at startup
-#   2. kubectl-proxy: authenticates to K8s API using the ServiceAccount token
-#   3. novnc-server (nginx): serves noVNC UI and proxies WebSocket to kubectl-proxy
+#   novnc.guest.enabled — novnc-deployment.yaml
+#     websockify sidecar: WebSocket → VM Service → in-guest VNC
+#     Exposed via Service + HTTPRoute (user-facing). Full clipboard support.
+#     Requires: in-guest VNC server in the VM (add to cloudInit.packages).
+#
+#   novnc.admin.enabled  — admin-novnc-deployment.yaml
+#     kubectl-proxy sidecar: nginx (/k8s/) → KubeVirt VNC subresource API
+#     Admin/debug access only. NO Service attached — use kubectl port-forward.
+#
 # ==============================================================================
 novnc:
-  # Enable noVNC web console
-  enabled: true
+  # QEMU VNC console — kubectl-proxy sidecar + /k8s/ nginx path
+  # Admin/debug access via KubeVirt subresource API.
+  # Runs in a dedicated pod (admin-novnc-deployment.yaml) with NO Service attached.
+  # Access: kubectl port-forward pod/<pod> 8080:8080
+  admin:
+    enabled: true
+
+  # In-guest VNC console — websockify sidecar + /websockify nginx path
+  # Primary user-facing access.
+  # Requires: in-guest VNC server in the VM (e.g. add tigervnc-standalone-server to cloudInit.packages).
+  guest:
+    enabled: false
 
   # noVNC release version downloaded from GitHub at pod startup
   # Ref: https://github.com/novnc/noVNC/releases
@@ -148,6 +133,12 @@ novnc:
       repository: "alpine"
       tag: "3.19"
       pullPolicy: IfNotPresent
+    # websockify: WebSocket-to-TCP bridge, used when mode=vnc
+    # Ref: https://github.com/novnc/websockify
+    websockify:
+      repository: "ghcr.io/novnc/websockify"
+      tag: "v0.11.0"
+      pullPolicy: IfNotPresent
 
   # Image pull secrets for private registries
   imagePullSecrets: []
@@ -158,26 +149,7 @@ novnc:
     type: ClusterIP
     port: 8080
 
-  # Ingress for external HTTP access to the noVNC console
-  # For WebSocket support, add proxy-read-timeout and proxy-send-timeout annotations
-  ingress:
-    enabled: false
-    className: ""
-    annotations: {}
-      # nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-      # nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-      # nginx.ingress.kubernetes.io/proxy-buffering: "off"
-    hosts:
-      - host: novnc-vm.example.com
-        paths:
-          - path: /
-            pathType: Prefix
-    tls: []
-    #  - secretName: novnc-vm-tls
-    #    hosts:
-    #      - novnc-vm.example.com
-
-  # Gateway API HTTPRoute (alternative to Ingress)
+  # Gateway API HTTPRoute for external access to the noVNC console.
   # Requires: Gateway API CRDs and a compatible Gateway controller
   httpRoute:
     enabled: false
@@ -187,7 +159,7 @@ novnc:
         sectionName: http
         # namespace: default
     hostnames:
-      - novnc-vm.example.com
+      - kubevirt-vm.example.com
     rules:
       - matches:
           - path:
@@ -212,16 +184,74 @@ novnc:
   tolerations: []
   affinity: {}
 
+  # ---------------------------------------------------------------------------
+  # RBAC — ServiceAccount for the kubectl-proxy sidecar (novnc.admin.enabled)
+  # Granted read access to VirtualMachineInstance VNC subresource.
+  # ---------------------------------------------------------------------------
+  serviceAccount:
+    # Create a dedicated ServiceAccount
+    create: true
+    # Annotations (e.g., for IRSA / Workload Identity)
+    annotations: {}
+    # Name override; defaults to the chart fullname if empty
+    name: ""
+    # Automount the ServiceAccount API token into the pod
+    automount: true
+
 # ==============================================================================
-# RBAC — ServiceAccount for the noVNC kubectl-proxy sidecar
-# The ServiceAccount is granted read access to VirtualMachineInstance VNC subresource
+# Web SSH Terminal (webssh)
+#
+# Deploys a wetty web terminal that connects to the VM's SSH port via the
+# cluster-internal VM Service.  Requires openssh-server in the VM guest
+# (add to cloudInit.packages).
+#
+# Architecture:
+#   Browser → wetty (web terminal) → VM Service (port 22) → guest sshd
 # ==============================================================================
-serviceAccount:
-  # Create a dedicated ServiceAccount
-  create: true
-  # Annotations (e.g., for IRSA / Workload Identity)
-  annotations: {}
-  # Name override; defaults to the chart fullname if empty
-  name: ""
-  # Automount the ServiceAccount API token into the pod
-  automount: true
+webssh:
+  # Enable the web SSH terminal
+  enabled: false
+
+  image:
+    repository: "ghcr.io/butlerx/wetty"
+    tag: "2.5"
+    pullPolicy: IfNotPresent
+
+  # Default SSH user for the wetty UI.
+  # Empty string defaults to vm.cloudInit.user.name at render time.
+  sshUser: ""
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 3000
+
+  # Gateway API HTTPRoute for external access to the web SSH terminal.
+  # Requires: Gateway API CRDs and a compatible Gateway controller
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        sectionName: http
+    hostnames:
+      - ssh.kubevirt-vm.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+  resources: {}
+    # limits:
+    #   cpu: 200m
+    #   memory: 256Mi
+    # requests:
+    #   cpu: 50m
+    #   memory: 128Mi
+
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

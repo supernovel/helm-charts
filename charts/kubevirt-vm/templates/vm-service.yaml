@@ -1,0 +1,39 @@
+{{/*
+Service that targets the KubeVirt VMI pod directly to expose in-guest ports.
+
+KubeVirt's masquerade network type forwards declared ports from the VMI pod
+into the guest.  This Service selects the VMI pod via the kubevirt.io/domain
+label so the ports become reachable cluster-wide.
+
+Used by:
+  - websockify (in the noVNC pod, mode=vnc) to reach the in-guest VNC server
+  - wetty (webssh deployment) to reach the in-guest SSH server
+
+Rendered only when novnc.guest.enabled or webssh.enabled.
+*/}}
+{{- if or .Values.novnc.guest.enabled .Values.webssh.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kubevirt-vm.fullname" . }}-vm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-vm.labels" . | nindent 4 }}
+spec:
+  # Select the VMI pod by its kubevirt.io/domain label
+  selector:
+    kubevirt.io/domain: {{ include "kubevirt-vm.fullname" . }}
+  ports:
+    {{- if .Values.novnc.guest.enabled }}
+    - name: vnc
+      port: 5900
+      targetPort: 5900
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.webssh.enabled }}
+    - name: ssh
+      port: 22
+      targetPort: 22
+      protocol: TCP
+    {{- end }}
+{{- end }}

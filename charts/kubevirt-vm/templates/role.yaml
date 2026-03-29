@@ -1,15 +1,21 @@
 {{/*
 RBAC Role: grants the noVNC kubectl-proxy ServiceAccount the minimum permissions
 needed to stream VNC from the VirtualMachineInstance in this namespace.
+
+This Role is used by the kubectl-proxy sidecar in the noVNC pod, which provides
+access to the QEMU VNC console via the KubeVirt subresource API at /k8s/.
+
+In mode=vnc this path is not exposed externally (admin access via port-forward only).
+In mode=qemu this is the primary console access path.
 */}}
-{{- if .Values.serviceAccount.create }}
+{{- if .Values.novnc.serviceAccount.create }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "novnc-vm.fullname" . }}-novnc
+  name: {{ include "kubevirt-vm.fullname" . }}-console
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "novnc-vm.labels" . | nindent 4 }}
+    {{- include "kubevirt-vm.labels" . | nindent 4 }}
 rules:
   # Allow the kubectl-proxy sidecar to stream VNC from the VMI
   - apiGroups: ["subresources.kubevirt.io"]

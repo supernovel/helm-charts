@@ -1,11 +1,11 @@
-{{- if .Values.novnc.enabled }}
+{{- if .Values.novnc.guest.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "novnc-vm.novncName" . }}
+  name: {{ include "kubevirt-vm.consoleName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "novnc-vm.novncLabels" . | nindent 4 }}
+    {{- include "kubevirt-vm.consoleLabels" . | nindent 4 }}
 spec:
   type: {{ .Values.novnc.service.type }}
   ports:
@@ -14,5 +14,5 @@ spec:
       targetPort: http
       protocol: TCP
   selector:
-    {{- include "novnc-vm.novncSelectorLabels" . | nindent 4 }}
+    {{- include "kubevirt-vm.consoleSelectorLabels" . | nindent 4 }}
 {{- end }}

@@ -12,10 +12,10 @@ References:
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
-  name: {{ include "novnc-vm.fullname" . }}
+  name: {{ include "kubevirt-vm.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "novnc-vm.labels" . | nindent 4 }}
+    {{- include "kubevirt-vm.labels" . | nindent 4 }}
 spec:
   # VM power state. Set to false to keep the VM stopped after creation.
   running: {{ .Values.vm.running }}
@@ -37,9 +37,9 @@ spec:
   # CDI will import the disk image from the specified HTTP source URL.
   dataVolumeTemplates:
     - metadata:
-        name: {{ include "novnc-vm.fullname" . }}-rootdisk
+        name: {{ include "kubevirt-vm.fullname" . }}-rootdisk
         labels:
-          {{- include "novnc-vm.labels" . | nindent 10 }}
+          {{- include "kubevirt-vm.labels" . | nindent 10 }}
       spec:
         pvc:
           accessModes:
@@ -56,13 +56,9 @@ spec:
 
   template:
     metadata:
-      {{- if .Values.vm.clipboard.enabled }}
-      annotations:
-        hooks.kubevirt.io/hookSidecars: '[{"args": ["--version", "v1alpha3"], "image":"{{ .Values.vm.clipboard.sidecarImage }}", "configMap": {"name": "{{ include "novnc-vm.fullname" . }}-clipboard", "key": "clipboard_hook.sh", "hookPath": "/usr/bin/onDefineDomain"}}]'
-      {{- end }}
       labels:
-        kubevirt.io/domain: {{ include "novnc-vm.fullname" . }}
-        {{- include "novnc-vm.selectorLabels" . | nindent 8 }}
+        kubevirt.io/domain: {{ include "kubevirt-vm.fullname" . }}
+        {{- include "kubevirt-vm.selectorLabels" . | nindent 8 }}
     spec:
       domain:
         devices:
@@ -83,6 +79,19 @@ spec:
               bridge: {}
               {{- else }}
               masquerade: {}
+              {{- end }}
+              {{- if or .Values.novnc.guest.enabled .Values.webssh.enabled }}
+              ports:
+                {{- if .Values.novnc.guest.enabled }}
+                - name: vnc
+                  port: 5900
+                  protocol: TCP
+                {{- end }}
+                {{- if .Values.webssh.enabled }}
+                - name: ssh
+                  port: 22
+                  protocol: TCP
+                {{- end }}
               {{- end }}
 
       networks:
@@ -112,11 +121,11 @@ spec:
         # Root disk: references the CDI DataVolume defined in dataVolumeTemplates
         - name: rootdisk
           dataVolume:
-            name: {{ include "novnc-vm.fullname" . }}-rootdisk
+            name: {{ include "kubevirt-vm.fullname" . }}-rootdisk
 
         {{- if .Values.vm.cloudInit.enabled }}
         # Cloud-init NoCloud disk: injects user-data at first boot
         - name: cloudinitdisk
           cloudInitNoCloud:
-            userDataBase64: {{ .Values.vm.cloudInit.userData | b64enc }}
+            userDataBase64: {{ include "kubevirt-vm.cloudInitUserData" . | b64enc }}
         {{- end }}

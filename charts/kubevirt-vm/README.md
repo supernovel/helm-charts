@@ -1,18 +1,13 @@
-# novnc-vm
+# kubevirt-vm
 
-가상머신(KubeVirt) + noVNC + Gateway HTTPRoute 구성을 위한 Helm 차트
+가상머신(KubeVirt) + noVNC / 웹 SSH 콘솔 구성을 위한 Helm 차트
 
 ## 아키텍처
 
 ```
 Browser ──HTTP/WS──▶ nginx (noVNC UI)
-                         │ /k8s/ proxy
-                         ▼
-                   kubectl-proxy (127.0.0.1:8001)
-                         │ ServiceAccount token
-                         ▼
-                   KubeVirt VNC API (subresources.kubevirt.io)
-                         │
+                         │  mode=qemu: /k8s/   → kubectl-proxy → KubeVirt VNC API → QEMU VNC
+                         │  mode=vnc:  /websockify → websockify → VM Service → in-guest VNC
                          ▼
                    VirtualMachineInstance (Debian 12)
                          │ CDI DataVolume
@@ -26,11 +21,13 @@ Browser ──HTTP/WS──▶ nginx (noVNC UI)
 |--------|------|
 | `VirtualMachine` | KubeVirt VM 정의 (CPU, Memory, Disk, Network) |
 | `DataVolume` | CDI가 Debian 클라우드 이미지를 HTTP로 임포트하는 PVC |
-| `Deployment` (noVNC) | kubectl-proxy + nginx 컨테이너 구성 |
+| `Deployment` (console) | kubectl-proxy + nginx (+ websockify, mode=vnc) 컨테이너 구성 |
+| `Deployment` (webssh) | wetty 웹 SSH 터미널 (webssh.enabled=true 시) |
 | `ConfigMap` | nginx 설정 + noVNC 자동 연결 HTML |
-| `Service` | noVNC 웹 UI 서비스 (기본 ClusterIP:8080) |
+| `Service` (console) | noVNC 웹 UI 서비스 (기본 ClusterIP:8080) |
+| `Service` (vm) | VMI pod 포트 직접 노출 (expose.vnc/ssh 활성화 시) |
 | `Ingress` / `HTTPRoute` | 외부 접근용 (선택) |
-| `ServiceAccount` | noVNC kubectl-proxy 전용 계정 |
+| `ServiceAccount` | console kubectl-proxy 전용 계정 |
 | `Role` / `RoleBinding` | KubeVirt VNC 서브리소스 접근 RBAC |
 
 ## 사전 요구사항
@@ -56,18 +53,18 @@ kubectl wait --for=condition=Available kubevirt/kubevirt -n kubevirt --timeout=3
 
 ```bash
 # 기본 설치
-helm install my-debian ./charts/novnc-vm
+helm install my-debian ./charts/kubevirt-vm
 
 # 커스텀 values 이용
-helm install my-debian ./charts/novnc-vm -f values.example.yaml
+helm install my-debian ./charts/kubevirt-vm -f values.example.yaml
 
 # 파라미터 직접 지정
-helm install my-debian ./charts/novnc-vm \
+helm install my-debian ./charts/kubevirt-vm \
   --set vm.cpu.cores=4 \
   --set vm.memory.guest=8Gi \
   --set vm.disk.size=50Gi \
   --set novnc.ingress.enabled=true \
-  --set novnc.ingress.hosts[0].host=novnc-vm.example.com
+  --set novnc.ingress.hosts[0].host=kubevirt-vm.example.com
 ```
 
 ## VM 상태 확인
@@ -80,16 +77,16 @@ kubectl get datavolume -w
 kubectl get vm,vmi
 
 # VM 시작/중지 (virtctl)
-virtctl start  my-debian-novnc-vm
-virtctl stop   my-debian-novnc-vm
-virtctl restart my-debian-novnc-vm
+virtctl start  my-debian-kubevirt-vm
+virtctl stop   my-debian-kubevirt-vm
+virtctl restart my-debian-kubevirt-vm
 ```
 
 ## noVNC 웹 콘솔 접속
 
 ```bash
 # 로컬 port-forward
-kubectl port-forward svc/my-debian-novnc-vm-novnc 8080:8080
+kubectl port-forward svc/my-debian-kubevirt-vm-console 8080:8080
 
 # 브라우저에서 접속
 open http://localhost:8080
@@ -105,10 +102,10 @@ open http://localhost:8080
 
 ```bash
 # VNC 콘솔 (virtctl)
-virtctl vnc my-debian-novnc-vm
+virtctl vnc my-debian-kubevirt-vm
 
 # SSH (VM에 SSH 서비스 필요)
-virtctl ssh debian@my-debian-novnc-vm
+virtctl ssh debian@my-debian-kubevirt-vm
 ```
 
 ## Gateway API HTTPRoute 사용
@@ -122,7 +119,7 @@ novnc:
       - name: my-gateway
         sectionName: http
     hostnames:
-      - novnc-vm.example.com
+      - kubevirt-vm.example.com
     rules:
       - matches:
           - path:

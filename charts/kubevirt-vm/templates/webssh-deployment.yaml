@@ -1,0 +1,88 @@
+{{- if .Values.webssh.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubevirt-vm.fullname" . }}-webssh
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-vm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webssh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "kubevirt-vm.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: webssh
+  template:
+    metadata:
+      {{- with .Values.webssh.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubevirt-vm.labels" . | nindent 8 }}
+        app.kubernetes.io/component: webssh
+        {{- with .Values.webssh.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.novnc.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: wetty
+          image: "{{ .Values.webssh.image.repository }}:{{ .Values.webssh.image.tag }}"
+          imagePullPolicy: {{ .Values.webssh.image.pullPolicy }}
+          args:
+            - --ssh-host={{ include "kubevirt-vm.fullname" . }}-vm.{{ .Release.Namespace }}.svc.cluster.local
+            - --ssh-port=22
+            - --ssh-user={{ .Values.webssh.sshUser | default .Values.vm.cloudInit.user.name }}
+            - --ssh-auth=password
+            - --base=/
+            - --port=3000
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          {{- with .Values.webssh.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+      {{- with .Values.webssh.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webssh.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webssh.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
