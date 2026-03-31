@@ -50,9 +50,7 @@ spec:
           {{- with .Values.vm.disk.storageClassName }}
           storageClassName: {{ . }}
           {{- end }}
-        source:
-          http:
-            url: {{ .Values.vm.disk.imageUrl | quote }}
+        source: {{ .Values.vm.disk.source | toYaml | nindent 10 }}
 
   template:
     metadata:

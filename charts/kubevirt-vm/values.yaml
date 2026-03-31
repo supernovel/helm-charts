@@ -47,7 +47,9 @@ vm:
     accessMode: "ReadWriteOnce"
     # Debian 12 (Bookworm) generic cloud image URL
     # CDI will import this image via HTTP during DataVolume creation
-    imageUrl: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
+    source:
+      http:
+        url: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
 
   # Cloud-init configuration injected via NoCloud datasource
   cloudInit:
