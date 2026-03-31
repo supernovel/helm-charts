@@ -310,6 +310,30 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/directus-0.1.0/directus-0.1.0.tgz
     version: 0.1.0
+  dockur-windows:
+  - apiVersion: v2
+    appVersion: "2025"
+    created: "2026-03-31T04:43:12.912282574Z"
+    description: 'Windows Virtual Machine running inside a container using QEMU/KVM
+      via dockur/windows. No KubeVirt required. Supports automatic Windows installation
+      from ISO with built-in noVNC web console on port 8006 and optional RDP access. '
+    digest: 6a80709c9a8b9163c6e8c444d1ac8967c3f896079ac7632a5cf5b1d55e74ba69
+    home: https://github.com/dockur/windows
+    keywords:
+    - qemu
+    - kvm
+    - windows
+    - vm
+    - novnc
+    - rdp
+    - dockur
+    name: dockur-windows
+    sources:
+    - https://github.com/dockur/windows
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/dockur-windows-0.1.1/dockur-windows-0.1.1.tgz
+    version: 0.1.1
   forgejo:
   - apiVersion: v2
     appVersion: 13.0.1
@@ -657,6 +681,30 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/postgresql-17.0.0/postgresql-17.0.0.tgz
     version: 17.0.0
+  qemus-qemu:
+  - apiVersion: v2
+    appVersion: "2025"
+    created: "2026-03-31T04:43:13.08121385Z"
+    description: 'Linux Virtual Machine running inside a container using QEMU/KVM
+      via qemus/qemu. No KubeVirt required. Supports various Linux distributions with
+      a built-in noVNC web console on port 8006 and optional SSH access. '
+    digest: d40e71ea7fe4c7396fa9277a118fdd208779e1bf8c4078fea350621b2d7e8df6
+    home: https://github.com/qemus/qemu
+    keywords:
+    - qemu
+    - kvm
+    - linux
+    - vm
+    - novnc
+    - ssh
+    - qemus
+    name: qemus-qemu
+    sources:
+    - https://github.com/qemus/qemu
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/qemus-qemu-0.1.1/qemus-qemu-0.1.1.tgz
+    version: 0.1.1
   supabase:
   - apiVersion: v2
     created: "2025-05-28T07:26:15.922536794Z"
@@ -708,4 +756,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2026-03-31T02:37:41.191522369Z"
+generated: "2026-03-31T04:43:13.081322832Z"
