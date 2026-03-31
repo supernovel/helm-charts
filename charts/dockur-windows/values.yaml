@@ -24,20 +24,27 @@ vm:
   # Windows version to install automatically.
   # dockur/windows will download the official ISO from Microsoft.
   # Common values:
-  #   "win11"       Windows 11 Pro
-  #   "win11e"      Windows 11 Enterprise (LTSC)
-  #   "win10"       Windows 10 Pro
-  #   "win10e"      Windows 10 Enterprise (LTSC)
-  #   "win2025"     Windows Server 2025
-  #   "win2022"     Windows Server 2022
-  #   "win2019"     Windows Server 2019
+  #   "11"          Windows 11 Pro
+  #   "11l"         Windows 11 LTSC
+  #   "11e"         Windows 11 Enterprise
+  #   "10"          Windows 10 Pro
+  #   "10l"         Windows 10 LTSC
+  #   "10e"         Windows 10 Enterprise
+  #   "8e"          Windows 8.1 Enterprise
+  #   "7u"          Windows 7 Ultimate
+  #   "xp"          Windows XP Professional
+  #   "2025"        Windows Server 2025
+  #   "2022"        Windows Server 2022
+  #   "2019"        Windows Server 2019
+  #   "2016"        Windows Server 2016
+  #   "2012"        Windows Server 2012
+  #   "2008"        Windows Server 2008
+  #
+  # Custom ISO: set version to a direct download URL to use an unsupported ISO.
+  #   version: "https://example.com/win.iso"
   # Ref: https://github.com/dockur/windows#how-do-i-select-the-windows-version
-  version: "win11"
-
-  # Custom ISO URL — overrides vm.version.
-  # The container will use this ISO instead of downloading from Microsoft.
-  # Leave empty to use vm.version auto-download.
-  isoUrl: ""
+  #      https://github.com/dockur/windows#how-do-i-install-a-custom-image
+  version: "11"
 
   # CPU cores allocated to the VM
   cpu: 2
@@ -56,19 +63,11 @@ vm:
   # Examples: "English", "Korean", "Japanese", "German"
   language: "English"
 
-  # Windows edition to install (when using auto-download)
-  # Examples: "Professional", "Enterprise"
-  edition: "Professional"
-
   # Windows username for the created account
   username: "user"
 
   # Windows password for the created account
   password: "password"
-
-  # KVM device path on the host node
-  # Change to /dev/null to disable KVM (runs slower without hardware virt)
-  kvmDevice: "/dev/kvm"
 
   # TUN/TAP networking — required for VM network access
   # Set to false only if your cluster network plugin provides alternatives

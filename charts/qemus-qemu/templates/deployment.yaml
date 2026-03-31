@@ -51,12 +51,8 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: VERSION
-              value: {{ .Values.vm.version | quote }}
-            {{- if .Values.vm.isoUrl }}
-            - name: ISO_URL
-              value: {{ .Values.vm.isoUrl | quote }}
-            {{- end }}
+            - name: BOOT
+              value: {{ .Values.vm.boot | quote }}
             - name: CPU_CORES
               value: {{ .Values.vm.cpu | quote }}
             - name: RAM_SIZE

@@ -21,20 +21,26 @@ fullnameOverride: ""
 # VM Configuration
 # ==============================================================================
 vm:
-  # Linux distribution to install automatically.
+  # Operating system to install automatically (passed as BOOT env var).
   # Common values:
-  #   "ubuntu"      Ubuntu 22.04 LTS
-  #   "ubuntu2404"  Ubuntu 24.04 LTS
-  #   "debian"      Debian 12
-  #   "fedora"      Fedora 40
-  #   "archlinux"   Arch Linux
-  #   "alpine"      Alpine Linux
-  # Ref: https://github.com/qemus/qemu#how-do-i-select-a-linux-version
-  version: "ubuntu"
-
-  # Custom ISO or disk image URL — overrides vm.version.
-  # Leave empty to use vm.version auto-download.
-  isoUrl: ""
+  #   "mint"        Linux Mint      2.8 GB  (default)
+  #   "ubuntu"      Ubuntu Desktop  6.0 GB
+  #   "ubuntus"     Ubuntu Server   3.0 GB
+  #   "debian"      Debian          3.3 GB
+  #   "fedora"      Fedora          2.3 GB
+  #   "arch"        Arch Linux      1.2 GB
+  #   "alpine"      Alpine Linux    60 MB
+  #   "alma"        Alma Linux      2.2 GB
+  #   "rocky"       Rocky Linux     2.1 GB
+  #   "kali"        Kali Linux      3.8 GB
+  #   "nixos"       NixOS           2.4 GB
+  #   "centos"      CentOS          7.0 GB
+  #
+  # Custom image: set boot to a direct download URL (.iso/.img/.qcow2/.vmdk etc.).
+  #   boot: "https://example.com/image.iso"
+  # Ref: https://github.com/qemus/qemu#how-do-i-select-the-operating-system
+  #      https://github.com/qemus/qemu#how-can-i-use-my-own-image
+  boot: "mint"
 
   # CPU cores allocated to the VM
   cpu: 2
@@ -47,9 +53,6 @@ vm:
 
   # Storage class for the PVC (empty = cluster default)
   storageClassName: ""
-
-  # KVM device path on the host node
-  kvmDevice: "/dev/kvm"
 
   # TUN/TAP networking — required for VM network access
   tun: true

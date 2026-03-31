@@ -53,10 +53,6 @@ spec:
           env:
             - name: VERSION
               value: {{ .Values.vm.version | quote }}
-            {{- if .Values.vm.isoUrl }}
-            - name: ISO_URL
-              value: {{ .Values.vm.isoUrl | quote }}
-            {{- end }}
             - name: CPU_CORES
               value: {{ .Values.vm.cpu | quote }}
             - name: RAM_SIZE
@@ -65,8 +61,6 @@ spec:
               value: {{ .Values.vm.diskSize | quote }}
             - name: LANGUAGE
               value: {{ .Values.vm.language | quote }}
-            - name: EDITION
-              value: {{ .Values.vm.edition | quote }}
             - name: USERNAME
               value: {{ .Values.vm.username | quote }}
             - name: PASSWORD
