@@ -1,0 +1,231 @@
+{{/*
+KubeVirt VirtualMachine resource for Windows.
+
+Supports two installation modes:
+  1. ISO install (default): Blank root DataVolume + Windows ISO CDROM.
+     - ISO boots first (bootOrder: 1), installs Windows to root disk (bootOrder: 2).
+     - autounattend.xml (sysprep ConfigMap) drives the unattended installation.
+     - After installation: set vm.iso.url="" and helm upgrade to detach the ISO.
+  2. HTTP image import: Set vm.disk.source.http.url to a pre-built Windows image.
+     - The ISO CDROM is omitted when vm.iso.url is empty.
+
+Windows-specific settings applied:
+  - Hyper-V enlightenments    (vm.hyperv.enabled)
+  - EFI firmware + Secure Boot (vm.firmware.efi / vm.firmware.secureBoot)
+  - SMM device                 (auto-enabled when secureBoot=true)
+  - TPM 2.0                    (vm.tpm.enabled — required for Windows 11)
+  - Windows clock tuning       (HPET off, RTC catchup, Hyper-V timer)
+
+References:
+  - https://kubevirt.io/user-guide/virtual_machines/windows_virtio_drivers/
+  - https://kubevirt.io/api-reference/
+*/}}
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: {{ include "kubevirt-windows-vm.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-windows-vm.labels" . | nindent 4 }}
+spec:
+  # VM power state. Set to false to keep the VM stopped after creation.
+  running: {{ .Values.vm.running }}
+
+  # Instancetype: CPU and memory are provided by the referenced instancetype object.
+  instancetype:
+    kind: {{ .Values.vm.instancetype.kind }}
+    name: {{ .Values.vm.instancetype.name }}
+
+  {{- if .Values.vm.preference.name }}
+  # Preference: guest OS optimizations (disk bus, NIC model, clock, etc.)
+  preference:
+    kind: {{ .Values.vm.preference.kind }}
+    name: {{ .Values.vm.preference.name }}
+  {{- end }}
+
+  # DataVolume templates — CDI provisions the root disk and (optionally) the ISO.
+  dataVolumeTemplates:
+    - metadata:
+        name: {{ include "kubevirt-windows-vm.fullname" . }}-rootdisk
+        labels:
+          {{- include "kubevirt-windows-vm.labels" . | nindent 10 }}
+      spec:
+        pvc:
+          accessModes:
+            - {{ .Values.vm.disk.accessMode }}
+          resources:
+            requests:
+              storage: {{ .Values.vm.disk.size }}
+          {{- with .Values.vm.disk.storageClassName }}
+          storageClassName: {{ . }}
+          {{- end }}
+        source: {{ .Values.vm.disk.source | toYaml | nindent 10 }}
+    {{- if .Values.vm.iso.url }}
+    # Windows installation ISO — attached as a bootable CDROM (bootOrder: 1).
+    # Remove by setting vm.iso.url="" after installation is complete.
+    - metadata:
+        name: {{ include "kubevirt-windows-vm.fullname" . }}-iso
+        labels:
+          {{- include "kubevirt-windows-vm.labels" . | nindent 10 }}
+      spec:
+        pvc:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ .Values.vm.iso.storageSize }}
+          {{- with .Values.vm.iso.storageClassName }}
+          storageClassName: {{ . }}
+          {{- end }}
+        source:
+          http:
+            url: {{ .Values.vm.iso.url }}
+    {{- end }}
+
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: {{ include "kubevirt-windows-vm.fullname" . }}
+        {{- include "kubevirt-windows-vm.selectorLabels" . | nindent 8 }}
+    spec:
+      domain:
+        # -----------------------------------------------------------------------
+        # Clock — Windows is sensitive to clock drift.
+        # HPET disabled, PIT set to delay, RTC set to catchup, Hyper-V timer on.
+        # -----------------------------------------------------------------------
+        clock:
+          utc: {}
+          timer:
+            hpet:
+              present: false
+            pit:
+              tickPolicy: delay
+            rtc:
+              tickPolicy: catchup
+            hyperv: {}
+
+        # -----------------------------------------------------------------------
+        # Features
+        # -----------------------------------------------------------------------
+        features:
+          acpi: {}
+          {{- if .Values.vm.hyperv.enabled }}
+          # Hyper-V enlightenments — reduces virtualization overhead for Windows guests.
+          hyperv:
+            relaxed: {}
+            vapic: {}
+            spinlocks:
+              spinlocks: 8191
+            synicTimer:
+              direct: {}
+            tlbFlush: {}
+            ipi: {}
+            frequencies: {}
+            reenlightenment: {}
+          {{- end }}
+          {{- if and .Values.vm.firmware.efi .Values.vm.firmware.secureBoot }}
+          # SMM is required for Secure Boot.
+          smm:
+            enabled: true
+          {{- end }}
+
+        # -----------------------------------------------------------------------
+        # Firmware — EFI + Secure Boot (recommended for Windows 10/11/Server 2022)
+        # -----------------------------------------------------------------------
+        firmware:
+          bootloader:
+            {{- if .Values.vm.firmware.efi }}
+            efi:
+              secureBoot: {{ .Values.vm.firmware.secureBoot }}
+            {{- else }}
+            bios: {}
+            {{- end }}
+
+        devices:
+          {{- if .Values.vm.tpm.enabled }}
+          # TPM 2.0 — required for Windows 11; optional for Windows Server 2022
+          tpm: {}
+          {{- end }}
+
+          disks:
+            {{- if .Values.vm.iso.url }}
+            # Windows ISO CDROM — boots first for installation (bootOrder: 1).
+            - name: windows-iso
+              cdrom:
+                bus: sata
+                readonly: true
+              bootOrder: 1
+            {{- end }}
+            # Root disk from the CDI DataVolume.
+            # Bus type is determined by the preference (e.g., sata for windows.2k22,
+            # virtio for windows.2k22.virtio). Set explicitly here to override.
+            - name: rootdisk
+              disk: {}
+              {{- if .Values.vm.iso.url }}
+              bootOrder: 2
+              {{- end }}
+            {{- if .Values.vm.sysprep.enabled }}
+            # Sysprep CD-ROM: contains autounattend.xml for unattended installation.
+            - name: sysprep
+              cdrom:
+                bus: sata
+                readonly: true
+            {{- end }}
+
+          interfaces:
+            - name: default
+              {{- if eq .Values.vm.network.type "bridge" }}
+              bridge: {}
+              {{- else }}
+              masquerade: {}
+              {{- end }}
+              {{- if .Values.rdp.enabled }}
+              ports:
+                - name: rdp
+                  port: 3389
+                  protocol: TCP
+              {{- end }}
+
+      networks:
+        - name: default
+          pod: {}
+
+      {{- with .Values.vm.evictionStrategy }}
+      evictionStrategy: {{ . }}
+      {{- end }}
+
+      {{- with .Values.vm.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.vm.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.vm.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      volumes:
+        # Root disk: references the CDI DataVolume defined in dataVolumeTemplates
+        - name: rootdisk
+          dataVolume:
+            name: {{ include "kubevirt-windows-vm.fullname" . }}-rootdisk
+
+        {{- if .Values.vm.iso.url }}
+        # Windows installation ISO DataVolume
+        - name: windows-iso
+          dataVolume:
+            name: {{ include "kubevirt-windows-vm.fullname" . }}-iso
+        {{- end }}
+
+        {{- if .Values.vm.sysprep.enabled }}
+        # Sysprep volume: mounts autounattend.xml for unattended installation
+        - name: sysprep
+          sysprep:
+            configMap:
+              name: {{ include "kubevirt-windows-vm.fullname" . }}-sysprep
+        {{- end }}

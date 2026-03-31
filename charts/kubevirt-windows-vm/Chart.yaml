@@ -1,0 +1,18 @@
+apiVersion: v2
+name: kubevirt-windows-vm
+description: >
+  Windows Virtual Machine deployment using KubeVirt with QEMU VNC console access and RDP.
+  Supports Windows Server 2022 / Windows 10 / Windows 11.
+  Requires KubeVirt and CDI (Containerized Data Importer) installed in the cluster.
+type: application
+version: 0.1.0
+appVersion: "11"
+keywords:
+  - kubevirt
+  - virtualization
+  - windows
+  - novnc
+  - vm
+  - kvm
+  - rdp
+  - sysprep

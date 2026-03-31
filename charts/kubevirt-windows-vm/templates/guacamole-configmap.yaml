@@ -1,0 +1,40 @@
+{{/*
+ConfigMap for Guacamole HTML5 RDP web console.
+
+Contains:
+  user-mapping.xml — basic-auth credential + RDP connection definition.
+    - Connects to the RDP Service ({{ fullname }}-rdp) inside the cluster.
+    - Credentials for VM login are pre-filled from vm.sysprep.adminPassword.
+
+Rendered when rdp.enabled=true.
+*/}}
+{{- if .Values.rdp.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubevirt-windows-vm.guacamoleName" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-windows-vm.guacamoleLabels" . | nindent 4 }}
+data:
+  user-mapping.xml: |
+    <user-mapping>
+      <authorize username="{{ .Values.rdp.guacamole.auth.username }}"
+                 password="{{ .Values.rdp.guacamole.auth.password }}"
+                 encoding="plain">
+        <connection name="{{ include "kubevirt-windows-vm.fullname" . }}">
+          <protocol>rdp</protocol>
+          <param name="hostname">{{ include "kubevirt-windows-vm.fullname" . }}-rdp</param>
+          <param name="port">{{ .Values.rdp.service.port }}</param>
+          <param name="username">Administrator</param>
+          <param name="password">{{ .Values.vm.sysprep.adminPassword }}</param>
+          <param name="ignore-cert">true</param>
+          <param name="security">any</param>
+          <param name="width">1920</param>
+          <param name="height">1080</param>
+          <param name="color-depth">32</param>
+          <param name="resize-method">display-update</param>
+        </connection>
+      </authorize>
+    </user-mapping>
+{{- end }}

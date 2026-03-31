@@ -1,0 +1,340 @@
+{{/*
+Windows Unattended Installation ConfigMap.
+
+Used for fresh Windows installation from ISO. Mounted as a CD-ROM (sata bus)
+via the KubeVirt sysprep volume. Windows Setup automatically detects
+autounattend.xml on the drive during the windowsPE phase.
+
+Passes included:
+  windowsPE   — disk partitioning (EFI + MSR + Windows) and OS image install.
+  specialize  — computer name and locale.
+  oobeSystem  — Administrator password, auto-logon, first-logon commands (RDP).
+
+Windows image edition is selected by vm.iso.imageIndex.
+Product key is optional (leave empty for evaluation / KMS activation).
+
+NOTE: The Administrator password is rendered as plain text in the ConfigMap.
+      For production deployments, use an external-secrets operator.
+
+NOTE: Avoid XML special characters in vm.sysprep.adminPassword: & < > " '
+*/}}
+{{- if .Values.vm.sysprep.enabled }}
+{{- $computerName := .Values.vm.sysprep.computerName | default (include "kubevirt-windows-vm.fullname" .) | trunc 15 | trimSuffix "-" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubevirt-windows-vm.fullname" . }}-sysprep
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-windows-vm.labels" . | nindent 4 }}
+data:
+  autounattend.xml: |
+    <?xml version="1.0" encoding="utf-8"?>
+    <unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+      <!-- windowsPE pass: disk partitioning and Windows installation -->
+      <settings pass="windowsPE">
+        <component name="Microsoft-Windows-International-Core-WinPE"
+                   processorArchitecture="amd64"
+                   publicKeyToken="31bf3856ad364e35"
+                   language="neutral"
+                   versionScope="nonSxS"
+                   xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <SetupUILanguage>
+            <UILanguage>{{ .Values.vm.sysprep.locale }}</UILanguage>
+          </SetupUILanguage>
+          <InputLocale>{{ .Values.vm.sysprep.locale }}</InputLocale>
+          <SystemLocale>{{ .Values.vm.sysprep.locale }}</SystemLocale>
+          <UILanguage>{{ .Values.vm.sysprep.locale }}</UILanguage>
+          <UserLocale>{{ .Values.vm.sysprep.locale }}</UserLocale>
+        </component>
+        <component name="Microsoft-Windows-Setup"
+                   processorArchitecture="amd64"
+                   publicKeyToken="31bf3856ad364e35"
+                   language="neutral"
+                   versionScope="nonSxS"
+                   xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <DiskConfiguration>
+            <Disk wcm:action="add">
+              <DiskID>0</DiskID>
+              <WillWipeDisk>true</WillWipeDisk>
+              <CreatePartitions>
+                <!-- EFI System Partition -->
+                <CreatePartition wcm:action="add">
+                  <Order>1</Order>
+                  <Type>EFI</Type>
+                  <Size>100</Size>
+                </CreatePartition>
+                <!-- Microsoft Reserved Partition -->
+                <CreatePartition wcm:action="add">
+                  <Order>2</Order>
+                  <Type>MSR</Type>
+                  <Size>16</Size>
+                </CreatePartition>
+                <!-- Windows OS partition (remaining space) -->
+                <CreatePartition wcm:action="add">
+                  <Order>3</Order>
+                  <Type>Primary</Type>
+                  <Extend>true</Extend>
+                </CreatePartition>
+              </CreatePartitions>
+              <ModifyPartitions>
+                <ModifyPartition wcm:action="add">
+                  <Order>1</Order>
+                  <PartitionID>1</PartitionID>
+                  <Label>System</Label>
+                  <Format>FAT32</Format>
+                </ModifyPartition>
+                <ModifyPartition wcm:action="add">
+                  <Order>2</Order>
+                  <PartitionID>2</PartitionID>
+                </ModifyPartition>
+                <ModifyPartition wcm:action="add">
+                  <Order>3</Order>
+                  <PartitionID>3</PartitionID>
+                  <Label>Windows</Label>
+                  <Letter>C</Letter>
+                  <Format>NTFS</Format>
+                </ModifyPartition>
+              </ModifyPartitions>
+            </Disk>
+          </DiskConfiguration>
+          <ImageInstall>
+            <OSImage>
+              <InstallFrom>
+                <MetaData wcm:action="add">
+                  <Key>/IMAGE/INDEX</Key>
+                  <Value>{{ .Values.vm.iso.imageIndex }}</Value>
+                </MetaData>
+              </InstallFrom>
+              <InstallTo>
+                <DiskID>0</DiskID>
+                <PartitionID>3</PartitionID>
+              </InstallTo>
+            </OSImage>
+          </ImageInstall>
+          <UserData>
+            <AcceptEula>true</AcceptEula>
+            {{- if .Values.vm.iso.productKey }}
+            <ProductKey>
+              <Key>{{ .Values.vm.iso.productKey }}</Key>
+              <WillShowUI>Never</WillShowUI>
+            </ProductKey>
+            {{- else }}
+            <ProductKey>
+              <WillShowUI>OnError</WillShowUI>
+            </ProductKey>
+            {{- end }}
+          </UserData>
+        </component>
+      </settings>
+
+      <!-- specialize pass: computer name and locale -->
+      <settings pass="specialize">
+        <component name="Microsoft-Windows-Shell-Setup"
+                   processorArchitecture="amd64"
+                   publicKeyToken="31bf3856ad364e35"
+                   language="neutral"
+                   versionScope="nonSxS"
+                   xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <ComputerName>{{ $computerName }}</ComputerName>
+          <TimeZone>{{ .Values.vm.sysprep.timezone }}</TimeZone>
+        </component>
+        <component name="Microsoft-Windows-International-Core"
+                   processorArchitecture="amd64"
+                   publicKeyToken="31bf3856ad364e35"
+                   language="neutral"
+                   versionScope="nonSxS">
+          <SystemLocale>{{ .Values.vm.sysprep.locale }}</SystemLocale>
+          <UILanguage>{{ .Values.vm.sysprep.locale }}</UILanguage>
+          <UserLocale>{{ .Values.vm.sysprep.locale }}</UserLocale>
+        </component>
+      </settings>
+
+      <!-- oobeSystem pass: Administrator password, auto-logon, first-logon commands -->
+      <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup"
+                   processorArchitecture="amd64"
+                   publicKeyToken="31bf3856ad364e35"
+                   language="neutral"
+                   versionScope="nonSxS"
+                   xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+
+          <OOBE>
+            <HideEULAPage>true</HideEULAPage>
+            <HideLocalAccountScreen>true</HideLocalAccountScreen>
+            <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+            <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+            <ProtectYourPC>3</ProtectYourPC>
+          </OOBE>
+
+          <UserAccounts>
+            <AdministratorPassword>
+              <Value>{{ .Values.vm.sysprep.adminPassword }}</Value>
+              <PlainText>true</PlainText>
+            </AdministratorPassword>
+          </UserAccounts>
+
+          <AutoLogon>
+            <Password>
+              <Value>{{ .Values.vm.sysprep.adminPassword }}</Value>
+              <PlainText>true</PlainText>
+            </Password>
+            <Enabled>true</Enabled>
+            <LogonCount>5</LogonCount>
+            <Username>Administrator</Username>
+          </AutoLogon>
+
+          <FirstLogonCommands>
+            <!-- Enable the Remote Desktop service -->
+            <SynchronousCommand wcm:action="add">
+              <CommandLine>powershell -NonInteractive -Command "Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0"</CommandLine>
+              <Description>Enable RDP (fDenyTSConnections=0)</Description>
+              <Order>1</Order>
+            </SynchronousCommand>
+            <!-- Open Windows Firewall for RDP -->
+            <SynchronousCommand wcm:action="add">
+              <CommandLine>powershell -NonInteractive -Command "Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'"</CommandLine>
+              <Description>Open RDP firewall rule</Description>
+              <Order>2</Order>
+            </SynchronousCommand>
+            <!-- Ensure the Remote Desktop service is running -->
+            <SynchronousCommand wcm:action="add">
+              <CommandLine>powershell -NonInteractive -Command "Set-Service -Name TermService -StartupType Automatic; Start-Service -Name TermService"</CommandLine>
+              <Description>Start Remote Desktop service</Description>
+              <Order>3</Order>
+            </SynchronousCommand>
+            {{- range $i, $cmd := .Values.vm.sysprep.firstLogonCommands }}
+            <!-- Custom command {{ add $i 4 }} -->
+            <SynchronousCommand wcm:action="add">
+              <CommandLine>{{ $cmd }}</CommandLine>
+              <Description>Custom command {{ add $i 4 }}</Description>
+              <Order>{{ add $i 4 }}</Order>
+            </SynchronousCommand>
+            {{- end }}
+          </FirstLogonCommands>
+
+        </component>
+      </settings>
+
+    </unattend>
+{{- end }}
+
+{{/*
+Built-in first-logon actions:
+  1. Enable the Remote Desktop Protocol service (TermService)
+  2. Open Windows Firewall for RDP (TCP 3389)
+  3. Start the Remote Desktop service
+
+Additional commands can be added via vm.sysprep.firstLogonCommands.
+
+NOTE: The Administrator password is rendered as plain text in the ConfigMap.
+      For production deployments, consider using an external-secrets operator
+      to inject the password from a Kubernetes Secret.
+
+NOTE: Avoid XML special characters in vm.sysprep.adminPassword: & < > " '
+*/}}
+{{- if .Values.vm.sysprep.enabled }}
+{{- $computerName := .Values.vm.sysprep.computerName | default (include "kubevirt-windows-vm.fullname" .) | trunc 15 | trimSuffix "-" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubevirt-windows-vm.fullname" . }}-sysprep
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-windows-vm.labels" . | nindent 4 }}
+data:
+  unattend.xml: |
+    <?xml version="1.0" encoding="utf-8"?>
+    <unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+      <!-- specialize pass: computer name and locale -->
+      <settings pass="specialize">
+        <component name="Microsoft-Windows-Shell-Setup"
+                   processorArchitecture="amd64"
+                   publicKeyToken="31bf3856ad364e35"
+                   language="neutral"
+                   versionScope="nonSxS"
+                   xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+          <ComputerName>{{ $computerName }}</ComputerName>
+          <TimeZone>{{ .Values.vm.sysprep.timezone }}</TimeZone>
+        </component>
+        <component name="Microsoft-Windows-International-Core"
+                   processorArchitecture="amd64"
+                   publicKeyToken="31bf3856ad364e35"
+                   language="neutral"
+                   versionScope="nonSxS">
+          <SystemLocale>{{ .Values.vm.sysprep.locale }}</SystemLocale>
+          <UILanguage>{{ .Values.vm.sysprep.locale }}</UILanguage>
+          <UserLocale>{{ .Values.vm.sysprep.locale }}</UserLocale>
+        </component>
+      </settings>
+
+      <!-- oobeSystem pass: Administrator password, auto-logon, first-logon commands -->
+      <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup"
+                   processorArchitecture="amd64"
+                   publicKeyToken="31bf3856ad364e35"
+                   language="neutral"
+                   versionScope="nonSxS"
+                   xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+
+          <OOBE>
+            <HideEULAPage>true</HideEULAPage>
+            <HideLocalAccountScreen>true</HideLocalAccountScreen>
+            <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+            <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+            <ProtectYourPC>3</ProtectYourPC>
+          </OOBE>
+
+          <UserAccounts>
+            <AdministratorPassword>
+              <Value>{{ .Values.vm.sysprep.adminPassword }}</Value>
+              <PlainText>true</PlainText>
+            </AdministratorPassword>
+          </UserAccounts>
+
+          <AutoLogon>
+            <Password>
+              <Value>{{ .Values.vm.sysprep.adminPassword }}</Value>
+              <PlainText>true</PlainText>
+            </Password>
+            <Enabled>true</Enabled>
+            <LogonCount>5</LogonCount>
+            <Username>Administrator</Username>
+          </AutoLogon>
+
+          <FirstLogonCommands>
+            <!-- Enable the Remote Desktop service -->
+            <SynchronousCommand wcm:action="add">
+              <CommandLine>powershell -NonInteractive -Command "Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0"</CommandLine>
+              <Description>Enable RDP (fDenyTSConnections=0)</Description>
+              <Order>1</Order>
+            </SynchronousCommand>
+            <!-- Open Windows Firewall for RDP -->
+            <SynchronousCommand wcm:action="add">
+              <CommandLine>powershell -NonInteractive -Command "Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'"</CommandLine>
+              <Description>Open RDP firewall rule</Description>
+              <Order>2</Order>
+            </SynchronousCommand>
+            <!-- Ensure the Remote Desktop service is running -->
+            <SynchronousCommand wcm:action="add">
+              <CommandLine>powershell -NonInteractive -Command "Set-Service -Name TermService -StartupType Automatic; Start-Service -Name TermService"</CommandLine>
+              <Description>Start Remote Desktop service</Description>
+              <Order>3</Order>
+            </SynchronousCommand>
+            {{- range $i, $cmd := .Values.vm.sysprep.firstLogonCommands }}
+            <!-- Custom command {{ add $i 4 }} -->
+            <SynchronousCommand wcm:action="add">
+              <CommandLine>{{ $cmd }}</CommandLine>
+              <Description>Custom command {{ add $i 4 }}</Description>
+              <Order>{{ add $i 4 }}</Order>
+            </SynchronousCommand>
+            {{- end }}
+          </FirstLogonCommands>
+
+        </component>
+      </settings>
+
+    </unattend>
+{{- end }}

@@ -1,0 +1,161 @@
+=============================================================
+  Windows VM — KubeVirt + noVNC
+=============================================================
+
+VirtualMachine: {{ include "kubevirt-windows-vm.fullname" . }}
+Namespace:      {{ .Release.Namespace }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  VM STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Wait for the DataVolume import to complete before the VM starts:
+
+    kubectl get datavolume -n {{ .Release.Namespace }} {{ include "kubevirt-windows-vm.fullname" . }}-rootdisk
+
+  Check VM status:
+
+    kubectl get vm -n {{ .Release.Namespace }} {{ include "kubevirt-windows-vm.fullname" . }}
+    kubectl get vmi -n {{ .Release.Namespace }} {{ include "kubevirt-windows-vm.fullname" . }}
+
+  Start/Stop the VM:
+
+    virtctl start   {{ include "kubevirt-windows-vm.fullname" . }} -n {{ .Release.Namespace }}
+    virtctl stop    {{ include "kubevirt-windows-vm.fullname" . }} -n {{ .Release.Namespace }}
+    virtctl restart {{ include "kubevirt-windows-vm.fullname" . }} -n {{ .Release.Namespace }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  noVNC ADMIN CONSOLE (QEMU VNC)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if .Values.adminNovnc.enabled }}
+
+  kubectl-proxy → KubeVirt VNC subresource API
+    No in-guest agent required. View BIOS/UEFI, boot screen, Sysprep progress.
+    Admin/debug only. Runs in a dedicated pod with NO Service attached.
+    Use pod port-forward:
+
+      POD=$(kubectl get pod -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "kubevirt-windows-vm.adminConsoleName" . }} \
+        -o jsonpath="{.items[0].metadata.name}")
+
+      kubectl port-forward -n {{ .Release.Namespace }} pod/$POD 8080:8080
+
+      Then open: http://localhost:8080
+
+  QEMU VNC via virtctl (CLI):
+    virtctl vnc {{ include "kubevirt-windows-vm.fullname" . }} -n {{ .Release.Namespace }}
+{{- else }}
+
+  Admin noVNC is disabled. Enable novnc.admin.enabled=true.
+  Access the VM console via virtctl:
+
+    virtctl vnc {{ include "kubevirt-windows-vm.fullname" . }} -n {{ .Release.Namespace }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  REMOTE DESKTOP (RDP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if .Values.rdp.enabled }}
+
+  Service: {{ include "kubevirt-windows-vm.fullname" . }}-rdp (port {{ .Values.rdp.service.port }})
+
+{{- if eq .Values.rdp.service.type "NodePort" }}
+  Access via NodePort:
+    export NODE_PORT=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "kubevirt-windows-vm.fullname" . }}-rdp \
+      -o jsonpath="{.spec.ports[0].nodePort}")
+    export NODE_IP=$(kubectl get nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+    # Connect with your RDP client to $NODE_IP:$NODE_PORT
+{{- else if eq .Values.rdp.service.type "LoadBalancer" }}
+  Access via LoadBalancer (may take a few minutes):
+    export RDP_IP=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "kubevirt-windows-vm.fullname" . }}-rdp \
+      -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+    # Connect with your RDP client to $RDP_IP:{{ .Values.rdp.service.port }}
+{{- else }}
+  Port-forward to connect via RDP locally:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "kubevirt-windows-vm.fullname" . }}-rdp 3389:{{ .Values.rdp.service.port }}
+
+    Then connect with your RDP client to localhost:3389
+      Windows:  mstsc /v:localhost:3389
+      Linux:    xfreerdp /v:localhost:3389 /u:Administrator
+      Remmina:  rdp://Administrator@localhost:3389
+{{- end }}
+
+  Default credentials (set via vm.sysprep.adminPassword):
+    Username: Administrator
+    Password: {{ .Values.vm.sysprep.adminPassword }}
+{{- else }}
+
+  RDP is disabled. To enable:
+    rdp.enabled=true
+
+  Once enabled, port-forward and connect with any RDP client:
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "kubevirt-windows-vm.fullname" . }}-rdp 3389:3389
+
+    mstsc /v:localhost:3389   (Windows)
+    xfreerdp /v:localhost     (Linux)
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  BROWSER RDP (Guacamole HTML5)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if .Values.rdp.enabled }}
+
+  Service: {{ include "kubevirt-windows-vm.guacamoleName" . }} (port {{ .Values.rdp.guacamole.service.port }})
+
+{{- if .Values.rdp.guacamole.httpRoute.enabled }}
+  External access via HTTPRoute:
+  {{- range .Values.rdp.guacamole.httpRoute.hostnames }}
+    http://{{ . }}/guacamole/
+  {{- end }}
+{{- else if eq .Values.rdp.guacamole.service.type "NodePort" }}
+  Access via NodePort:
+    export NODE_PORT=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "kubevirt-windows-vm.guacamoleName" . }} \
+      -o jsonpath="{.spec.ports[0].nodePort}")
+    export NODE_IP=$(kubectl get nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+    # Open: http://$NODE_IP:$NODE_PORT/guacamole/
+{{- else if eq .Values.rdp.guacamole.service.type "LoadBalancer" }}
+  Access via LoadBalancer (may take a few minutes):
+    export GUC_IP=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "kubevirt-windows-vm.guacamoleName" . }} \
+      -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+    # Open: http://$GUC_IP:{{ .Values.rdp.guacamole.service.port }}/guacamole/
+{{- else }}
+  Port-forward for local access:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "kubevirt-windows-vm.guacamoleName" . }} 8080:{{ .Values.rdp.guacamole.service.port }}
+
+    Then open: http://localhost:8080/guacamole/
+{{- end }}
+
+  Login credentials (rdp.guacamole.auth):
+    Username: {{ .Values.rdp.guacamole.auth.username }}
+    Password: {{ .Values.rdp.guacamole.auth.password }}
+{{- else }}
+
+  Browser RDP (Guacamole) is inactive. Enable with rdp.enabled=true.
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SYSPREP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if .Values.vm.sysprep.enabled }}
+
+  Sysprep is ENABLED. The unattend.xml will be applied on first boot.
+  Check sysprep ConfigMap:
+
+    kubectl get configmap -n {{ .Release.Namespace }} {{ include "kubevirt-windows-vm.fullname" . }}-sysprep
+
+  First-boot actions configured:
+    - Enable Remote Desktop Protocol (RDP)
+    - Open Windows Firewall for RDP (port 3389)
+    - Start Remote Desktop service (TermService)
+{{- if .Values.vm.sysprep.firstLogonCommands }}
+    - {{ len .Values.vm.sysprep.firstLogonCommands }} custom FirstLogonCommand(s)
+{{- end }}
+{{- else }}
+
+  Sysprep is disabled. The VM will boot without any unattended configuration.
+  Enable: vm.sysprep.enabled=true
+{{- end }}

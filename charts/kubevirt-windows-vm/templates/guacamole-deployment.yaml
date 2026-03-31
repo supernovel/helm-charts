@@ -1,0 +1,149 @@
+{{/*
+Deployment for the Guacamole HTML5 RDP web console.
+
+Pod contains:
+  1. guacd        — Guacamole proxy daemon. Listens on 127.0.0.1:4822 (loopback).
+                    Translates RDP ↔ Guacamole protocol.
+  2. guacamole    — Guacamole web application (Jakarta EE / Tomcat).
+                    Listens on port 8080. NO Service attached.
+                    Access via: kubectl port-forward pod/<pod> 8080:8080
+                    Then open:  http://localhost:8080/guacamole/
+
+Connection flow:
+  Browser (HTML5 Canvas) ──HTTP/WS──> guacamole:8080 ──Guac──> guacd:4822 ──RDP──> {{ fullname }}-rdp:3389
+
+Login credentials are configured via rdp.guacamole.auth.
+VM credentials are pre-filled from vm.sysprep.adminPassword.
+Rendered when rdp.enabled=true.
+*/}}
+{{- if .Values.rdp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubevirt-windows-vm.guacamoleName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-windows-vm.guacamoleLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "kubevirt-windows-vm.guacamoleSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.rdp.guacamole.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubevirt-windows-vm.guacamoleLabels" . | nindent 8 }}
+        {{- with .Values.rdp.guacamole.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with .Values.rdp.guacamole.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        # -------------------------------------------------------------------
+        # guacd: Guacamole proxy daemon
+        # Translates RDP → Guacamole protocol. Loopback only (127.0.0.1:4822).
+        # -------------------------------------------------------------------
+        - name: guacd
+          image: "{{ .Values.rdp.guacamole.image.guacd.repository }}:{{ .Values.rdp.guacamole.image.guacd.tag }}"
+          imagePullPolicy: {{ .Values.rdp.guacamole.image.guacd.pullPolicy }}
+          args: ["-b", "127.0.0.1", "-l", "4822"]
+          ports:
+            - name: guacd
+              containerPort: 4822
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: guacd
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: guacd
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: ["ALL"]
+          {{- with .Values.rdp.guacamole.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+        # -------------------------------------------------------------------
+        # guacamole: HTML5 web frontend (Tomcat)
+        # Connects to guacd on loopback. Port 8080 — NO Service attached.
+        # Access: kubectl port-forward pod/<pod> 8080:8080
+        #         http://localhost:8080/guacamole/
+        # -------------------------------------------------------------------
+        - name: guacamole
+          image: "{{ .Values.rdp.guacamole.image.web.repository }}:{{ .Values.rdp.guacamole.image.web.tag }}"
+          imagePullPolicy: {{ .Values.rdp.guacamole.image.web.pullPolicy }}
+          env:
+            - name: GUACD_HOSTNAME
+              value: "127.0.0.1"
+            - name: GUACD_PORT
+              value: "4822"
+            - name: GUACAMOLE_HOME
+              value: /guacamole-home
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /guacamole/
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /guacamole/
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: ["ALL"]
+          {{- with .Values.rdp.guacamole.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: guacamole-config
+              mountPath: /guacamole-home
+
+      volumes:
+        - name: guacamole-config
+          configMap:
+            name: {{ include "kubevirt-windows-vm.guacamoleName" . }}-config
+
+      {{- with .Values.rdp.guacamole.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.rdp.guacamole.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.rdp.guacamole.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

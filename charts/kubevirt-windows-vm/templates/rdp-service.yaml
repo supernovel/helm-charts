@@ -1,0 +1,41 @@
+{{/*
+RDP Service — exposes the Windows Remote Desktop port (3389/TCP) on the guest VM.
+
+Selects the VMI pod via the kubevirt.io/domain label.
+KubeVirt masquerade networking forwards TCP:3389 from the VMI pod into the guest.
+
+Access methods by service type:
+  ClusterIP (default):
+    kubectl port-forward svc/{{ "{{ include \"kubevirt-windows-vm.fullname\" . }}-rdp" }} 3389:3389
+    Then connect with any RDP client to localhost:3389.
+
+  NodePort:
+    Connect directly to <NodeIP>:<nodePort> with any RDP client.
+
+  LoadBalancer:
+    Connect to the assigned external IP on port 3389 with any RDP client.
+
+Recommended RDP clients: Windows Remote Desktop, Remmina (Linux), FreeRDP (CLI).
+*/}}
+{{- if .Values.rdp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kubevirt-windows-vm.fullname" . }}-rdp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-windows-vm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rdp
+spec:
+  type: {{ .Values.rdp.service.type }}
+  selector:
+    kubevirt.io/domain: {{ include "kubevirt-windows-vm.fullname" . }}
+  ports:
+    - name: rdp
+      port: {{ .Values.rdp.service.port }}
+      targetPort: {{ .Values.rdp.service.port }}
+      protocol: TCP
+      {{- if and (eq .Values.rdp.service.type "NodePort") .Values.rdp.service.nodePort }}
+      nodePort: {{ .Values.rdp.service.nodePort }}
+      {{- end }}
+{{- end }}

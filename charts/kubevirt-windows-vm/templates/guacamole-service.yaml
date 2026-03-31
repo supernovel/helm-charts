@@ -1,0 +1,32 @@
+{{/*
+Service for the Guacamole HTML5 RDP web console.
+Exposes port 8080 (guacamole web) to the cluster.
+
+Access methods by service type:
+  ClusterIP (default): kubectl port-forward svc/<name>-guacamole 8080:8080
+  NodePort:            connect directly to <NodeIP>:<nodePort>
+  LoadBalancer:        connect to the assigned external IP on port 8080
+
+Rendered when rdp.enabled=true.
+*/}}
+{{- if .Values.rdp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kubevirt-windows-vm.guacamoleName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-windows-vm.guacamoleLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.rdp.guacamole.service.type }}
+  selector:
+    {{- include "kubevirt-windows-vm.guacamoleSelectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.rdp.guacamole.service.port }}
+      targetPort: http
+      protocol: TCP
+      {{- if and (eq .Values.rdp.guacamole.service.type "NodePort") .Values.rdp.guacamole.service.nodePort }}
+      nodePort: {{ .Values.rdp.guacamole.service.nodePort }}
+      {{- end }}
+{{- end }}

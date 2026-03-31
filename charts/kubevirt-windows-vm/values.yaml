@@ -1,0 +1,352 @@
+# Default values for kubevirt-windows-vm.
+# This is a YAML-formatted file.
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full chart name
+fullnameOverride: ""
+
+# ==============================================================================
+# VirtualMachine Configuration (KubeVirt)
+# Prerequisites:
+#   - KubeVirt installed (https://kubevirt.io/)
+#   - CDI (Containerized Data Importer) installed for disk image import
+#   - kubevirt/common-instancetypes installed for instancetype/preference objects
+# ==============================================================================
+vm:
+  # Whether the VM should be in running state after deployment
+  running: true
+
+  # Instance type — CPU and memory are defined by the VirtualMachineClusterInstancetype
+  # Common instancetypes (requires kubevirt/common-instancetypes to be installed):
+  #   u1.medium : 1 vCPU,  4Gi  (minimum for Windows)
+  #   u1.large  : 2 vCPU,  8Gi  (recommended for Windows Server)
+  #   u1.xlarge : 4 vCPU, 16Gi
+  #   u1.2xlarge: 8 vCPU, 32Gi
+  # Ref: https://github.com/kubevirt/common-instancetypes
+  instancetype:
+    # VirtualMachineClusterInstancetype (cluster-scoped) or VirtualMachineInstancetype (namespace-scoped)
+    kind: VirtualMachineClusterInstancetype
+    name: u1.large
+
+  # Preference — guest OS optimizations (disk bus, NIC model, clock, etc.)
+  # Windows preferences from kubevirt/common-instancetypes:
+  #   windows.2k22        : Windows Server 2022 (SATA disk, e1000e NIC)
+  #   windows.2k22.virtio : Windows Server 2022 with VirtIO drivers (virtio disk/NIC)
+  #   windows.2k19        : Windows Server 2019
+  #   windows.11          : Windows 11 (requires TPM — set tpm.enabled=true)
+  #   windows.10          : Windows 10
+  # Leave name empty to skip.
+  preference:
+    kind: VirtualMachineClusterPreference
+    name: "windows.11"
+
+  # Root disk configuration (backed by a CDI DataVolume)
+  disk:
+    # Root disk size — Windows Server 2022 requires at least 32Gi; 60Gi recommended
+    size: "60Gi"
+    # Storage class for the DataVolume PVC (empty = cluster default)
+    storageClassName: ""
+    # PVC access mode: ReadWriteOnce or ReadWriteMany (for live migration)
+    accessMode: "ReadWriteOnce"
+    # CDI DataVolume source.
+    # ISO-based installation (default): blank disk — Windows installs from ISO.
+    # HTTP import (pre-built cloud image):
+    #   source:
+    #     http:
+    #       url: "https://example.com/windows.qcow2"
+    # PVC clone:
+    #   source:
+    #     pvc:
+    #       name: my-windows-pvc
+    #       namespace: default
+    source:
+      blank: {}
+
+  # ==============================================================================
+  # Windows Installation ISO
+  #
+  # Attaches a Windows installation ISO as a bootable CDROM (bootOrder: 1).
+  # The root disk is set to bootOrder: 2 so the installer runs on first boot.
+  #
+  # After installation is complete:
+  #   1. Set vm.iso.url to "" (removes the ISO CDROM on next helm upgrade)
+  #   2. helm upgrade <release> — VM will reboot from rootdisk
+  # ==============================================================================
+  iso:
+    # HTTP/HTTPS URL of the Windows installation ISO.
+    # Must be reachable by the CDI importer pod.
+    # Leave empty to skip ISO attachment (e.g., when using a pre-built image).
+    url: ""
+    # PVC storage size for the ISO DataVolume. Must be >= ISO file size.
+    #   Windows Server 2022 ISO: ~5.4Gi  →  use "6Gi"
+    #   Windows 11 ISO:          ~5.8Gi  →  use "7Gi"
+    storageSize: "7Gi"
+    # Storage class for the ISO DataVolume PVC (empty = cluster default)
+    storageClassName: ""
+    # Image index to install from the ISO (WIM/ESD edition index).
+    # Windows Server 2022:
+    #   1 = Standard (Desktop Experience)    2 = Standard (Core)
+    #   3 = Datacenter (Desktop Experience)  4 = Datacenter (Core)
+    # Windows 11:
+    #   1 = Home   5 = Education   6 = Pro   8 = Pro for Workstations
+    imageIndex: 1
+    # Product key for activation. Leave empty for evaluation or KMS activation.
+    productKey: ""
+
+  # ==============================================================================
+  # Windows-specific firmware settings
+  # ==============================================================================
+
+  # EFI firmware and Secure Boot
+  # Windows 11 requires both EFI and secureBoot.
+  # Windows Server 2022 supports EFI/SecureBoot but can also run with BIOS.
+  firmware:
+    # Use EFI firmware (recommended for all modern Windows versions)
+    efi: true
+    # Enable Secure Boot (requires efi: true; also enables SMM automatically)
+    secureBoot: true
+
+  # TPM 2.0 device — required for Windows 11, optional for Windows Server 2022
+  tpm:
+    enabled: true
+
+  # Hyper-V enlightenments — significantly improves performance on Windows guests.
+  # Disable only if you experience guest stability issues.
+  hyperv:
+    enabled: true
+
+  # ==============================================================================
+  # Sysprep Configuration
+  #
+  # Injected as a CD-ROM (sata bus) on first boot. Windows auto-detects the
+  # unattend.xml from this disk during the OOBE/specialize pass.
+  #
+  # Built-in first-logon actions:
+  #   1. Enable the Remote Desktop service (TermService)
+  #   2. Open Windows Firewall for RDP (port 3389)
+  #   3. Start the Remote Desktop service
+  #
+  # Set enabled=false if your image uses cloudbase-init, a pre-baked answer
+  # file, or does not need additional first-boot configuration.
+  # ==============================================================================
+  sysprep:
+    enabled: true
+    # Local Administrator password.
+    # IMPORTANT: Avoid XML special characters in the password: & < > " '
+    # For production deployments, use a Kubernetes Secret and reference it here
+    # (requires external-secrets or manual secret injection).
+    adminPassword: "P@ssw0rd!"
+    # Computer/hostname (max 15 characters). Defaults to the release fullname (truncated).
+    computerName: ""
+    # Windows time zone. Run 'tzutil /l' in Windows to list valid identifiers.
+    # Examples: "UTC", "Pacific Standard Time", "Korea Standard Time"
+    timezone: "UTC"
+    # UI and system locale (BCP 47 / Windows locale name).
+    # Examples: "en-US", "ko-KR", "ja-JP", "de-DE"
+    locale: "en-US"
+    # Additional FirstLogonCommands appended after the built-in RDP-enable commands.
+    # Each entry is a full command string (cmd, powershell, etc.).
+    firstLogonCommands: []
+      # - 'powershell -Command "Install-WindowsFeature -Name Web-Server -IncludeManagementTools"'
+      # - 'net user myuser MyPassword! /add /Y && net localgroup Administrators myuser /add'
+
+  # Network interface type
+  # masquerade: NAT-based networking using the pod network (recommended)
+  # bridge:     Direct bridge networking (requires NetworkAttachmentDefinition)
+  network:
+    type: masquerade
+
+  # Eviction strategy for node maintenance / live migration
+  evictionStrategy: "LiveMigrate"
+
+  # VM pod scheduling constraints
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# ==============================================================================
+# noVNC Admin Console Configuration (QEMU VNC)
+#
+# Deploys a single pod with kubectl-proxy + nginx that proxies the KubeVirt
+# VNC subresource API. Provides low-level QEMU VNC access without any
+# in-guest agent — useful for viewing BIOS/UEFI, boot screens, and Sysprep
+# progress.
+#
+#   adminNovnc.enabled — admin-novnc-deployment.yaml
+#     kubectl-proxy sidecar: nginx (/k8s/) → KubeVirt VNC subresource API
+#     Admin/debug access only. NO Service attached — use kubectl port-forward.
+#
+# ==============================================================================
+adminNovnc:
+  # QEMU VNC console — kubectl-proxy sidecar + /k8s/ nginx path
+  # Admin/debug access via KubeVirt subresource API.
+  # Runs in a dedicated pod with NO Service attached.
+  # Access: kubectl port-forward pod/<pod> 8080:8080
+  enabled: true
+
+  # noVNC release version downloaded from GitHub at pod startup
+  # Ref: https://github.com/novnc/noVNC/releases
+  version: "1.4.0"
+
+  # Container images
+  image:
+    # kubectl proxy sidecar: authenticates requests to the KubeVirt VNC API
+    proxy:
+      repository: "rancher/kubectl"
+      tag: "v1.34.5"
+      pullPolicy: IfNotPresent
+    # nginx: serves noVNC static files and proxies WebSocket to KubeVirt
+    server:
+      repository: "nginx"
+      tag: "1.28.2-alpine-perl"
+      pullPolicy: IfNotPresent
+    # Init container: downloads noVNC static files from GitHub at pod start
+    init:
+      repository: "alpine"
+      tag: "3.19"
+      pullPolicy: IfNotPresent
+
+  # Image pull secrets for private registries
+  imagePullSecrets: []
+
+  # Resource limits for noVNC containers (kubectl-proxy + nginx)
+  resources: {}
+    # limits:
+    #   cpu: 200m
+    #   memory: 256Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # Additional pod annotations and labels for the noVNC deployment
+  podAnnotations: {}
+  podLabels: {}
+
+  # noVNC pod scheduling constraints
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  # ---------------------------------------------------------------------------
+  # RBAC — ServiceAccount for the kubectl-proxy sidecar
+  # Granted read access to VirtualMachineInstance VNC subresource.
+  # ---------------------------------------------------------------------------
+  serviceAccount:
+    # Create a dedicated ServiceAccount
+    create: true
+    # Annotations (e.g., for IRSA / Workload Identity)
+    annotations: {}
+    # Name override; defaults to the chart fullname if empty
+    name: ""
+    # Automount the ServiceAccount API token into the pod
+    automount: true
+
+# ==============================================================================
+# RDP Access Configuration
+#
+# Creates a Kubernetes Service that exposes the Windows Remote Desktop port
+# (3389/TCP) on the guest VM.
+#
+# When rdp.enabled=true, also deploys a Guacamole pod for browser-based RDP:
+#   guacd + guacamole web (HTML5 Canvas) — Service on port 8080.
+#   ClusterIP (default): kubectl port-forward svc/<name>-guacamole 8080:8080
+#   External (HTTPRoute): set rdp.guacamole.httpRoute.enabled=true
+#
+# Connection methods (native RDP client):
+#   ClusterIP  (default): kubectl port-forward svc/<name>-rdp 3389:3389
+#                         then connect with any RDP client to localhost:3389
+#   NodePort:             connect directly to <NodeIP>:<nodePort>
+#   LoadBalancer:         connect to the assigned external IP on port 3389
+#
+# Recommended RDP clients: Windows Remote Desktop, Remmina (Linux), FreeRDP
+# ==============================================================================
+rdp:
+  # Enable the RDP Service (also enables the Guacamole browser console)
+  enabled: true
+
+  service:
+    # ClusterIP: local access via kubectl port-forward
+    # NodePort:  direct node-level access
+    # LoadBalancer: external IP (depends on cloud provider)
+    type: ClusterIP
+    port: 3389
+    # nodePort: 33389  # Uncomment to pin the NodePort value (NodePort type only)
+
+  # ---------------------------------------------------------------------------
+  # Guacamole HTML5 RDP Web Console
+  #
+  # Deploys a pod with guacd + guacamole web when rdp.enabled=true.
+  # Provides browser-based RDP access without a native RDP client.
+  # NO Service attached — port-forward only.
+  #
+  # Login: http://localhost:8080/guacamole/
+  #   Username: rdp.guacamole.auth.username
+  #   Password: rdp.guacamole.auth.password
+  # VM credentials are pre-filled from vm.sysprep.adminPassword.
+  # ---------------------------------------------------------------------------
+  guacamole:
+    # Guacamole web UI login credentials
+    auth:
+      username: "admin"
+      password: "admin"
+
+    # Container images
+    image:
+      # guacd: RDP proxy daemon
+      guacd:
+        repository: "guacamole/guacd"
+        tag: "1.6.0"
+        pullPolicy: IfNotPresent
+      # guacamole: HTML5 web frontend (Tomcat)
+      web:
+        repository: "guacamole/guacamole"
+        tag: "1.6.0"
+        pullPolicy: IfNotPresent
+
+    # Image pull secrets for private registries
+    imagePullSecrets: []
+
+    # Resource limits (applied to both guacd and guacamole containers)
+    resources: {}
+      # limits:
+      #   cpu: 500m
+      #   memory: 512Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 256Mi
+
+    # Service configuration for the Guacamole web UI
+    service:
+      # ClusterIP: local access via kubectl port-forward
+      # NodePort:  direct node-level access
+      # LoadBalancer: external IP (depends on cloud provider)
+      type: ClusterIP
+      port: 8080
+      # nodePort: 38080  # Uncomment to pin the NodePort value (NodePort type only)
+
+    # Gateway API HTTPRoute for external access to the Guacamole web UI.
+    # Requires: Gateway API CRDs and a compatible Gateway controller installed.
+    httpRoute:
+      enabled: false
+      annotations: {}
+      parentRefs:
+        - name: gateway
+          sectionName: http
+          # namespace: default
+      hostnames:
+        - rdp.kubevirt-windows-vm.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+
+    # Additional pod annotations and labels
+    podAnnotations: {}
+    podLabels: {}
+
+    # Pod scheduling constraints
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}

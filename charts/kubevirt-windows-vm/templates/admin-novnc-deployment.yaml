@@ -1,0 +1,176 @@
+{{/*
+Deployment for the admin noVNC web console — QEMU VNC access (novnc.admin.enabled).
+
+Pod contains:
+  1. init/download-novnc  — Downloads noVNC static files from GitHub into a shared volume.
+  2. kubectl-proxy        — Listens on 127.0.0.1:8001; forwards KubeVirt subresource API requests
+                            using the ServiceAccount token. Serves the /k8s/ nginx path.
+  3. novnc-server (nginx) — Serves noVNC static files + proxies /k8s/ → kubectl-proxy:8001.
+                            Listens on port 8080. NOT connected to any Service.
+                            Access via: kubectl port-forward pod/<pod> 8080:8080
+
+Connection flow:
+  Browser ──WS──> nginx (/k8s/) ──WS──> kubectl-proxy:8001 ──> KubeVirt API ──> QEMU VNC
+
+Provides access to the Windows VM console without requiring any in-guest VNC agent.
+Useful for viewing BIOS/UEFI, boot screens, sysprep progress, and troubleshooting.
+
+Guest VNC (user-facing) is in a separate pod — see novnc-deployment.yaml.
+*/}}
+{{- if .Values.adminNovnc.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubevirt-windows-vm.adminConsoleName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubevirt-windows-vm.adminConsoleLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "kubevirt-windows-vm.adminConsoleSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.adminNovnc.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubevirt-windows-vm.adminConsoleLabels" . | nindent 8 }}
+        {{- with .Values.adminNovnc.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.adminNovnc.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kubevirt-windows-vm.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.adminNovnc.serviceAccount.automount }}
+
+      initContainers:
+        - name: download-novnc
+          image: "{{ .Values.adminNovnc.image.init.repository }}:{{ .Values.adminNovnc.image.init.tag }}"
+          imagePullPolicy: {{ .Values.adminNovnc.image.init.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              NOVNC_VERSION="{{ .Values.adminNovnc.version }}"
+              echo "Downloading noVNC v${NOVNC_VERSION} ..."
+              wget -q -O /tmp/novnc.tar.gz \
+                "https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz"
+              tar -xzf /tmp/novnc.tar.gz -C /tmp/
+              cp -r "/tmp/noVNC-${NOVNC_VERSION}/." /novnc/
+              echo "noVNC ready."
+          volumeMounts:
+            - name: novnc-files
+              mountPath: /novnc
+
+      containers:
+        # -------------------------------------------------------------------
+        # kubectl-proxy: KubeVirt subresource API proxy
+        # Listens on 127.0.0.1:8001 — loopback only, not network-accessible.
+        # -------------------------------------------------------------------
+        - name: kubectl-proxy
+          image: "{{ .Values.adminNovnc.image.proxy.repository }}:{{ .Values.adminNovnc.image.proxy.tag }}"
+          imagePullPolicy: {{ .Values.adminNovnc.image.proxy.pullPolicy }}
+          command:
+            - kubectl
+            - proxy
+            - --port=8001
+            - --address=127.0.0.1
+            - --accept-hosts=^127\.0\.0\.1$,^localhost$
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: ["ALL"]
+
+        # -------------------------------------------------------------------
+        # nginx: noVNC static files + /k8s/ proxy (QEMU VNC)
+        # Port 8080 — NO Service attached. Access via port-forward only.
+        # -------------------------------------------------------------------
+        - name: novnc-server
+          image: "{{ .Values.adminNovnc.image.server.repository }}:{{ .Values.adminNovnc.image.server.tag }}"
+          imagePullPolicy: {{ .Values.adminNovnc.image.server.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          {{- with .Values.adminNovnc.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: novnc-files
+              mountPath: /usr/share/nginx/html
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: nginx.conf
+            - name: novnc-index
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: nginx-run
+              mountPath: /var/run
+
+      volumes:
+        - name: novnc-files
+          emptyDir: {}
+        - name: nginx-config
+          configMap:
+            name: {{ include "kubevirt-windows-vm.adminConsoleName" . }}-config
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+        - name: novnc-index
+          configMap:
+            name: {{ include "kubevirt-windows-vm.adminConsoleName" . }}-config
+            items:
+              - key: index.html
+                path: index.html
+        - name: nginx-tmp
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+
+      {{- with .Values.adminNovnc.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.adminNovnc.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.adminNovnc.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
