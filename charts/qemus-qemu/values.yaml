@@ -1,0 +1,145 @@
+# Default values for qemus-qemu.
+# This is a YAML-formatted file.
+#
+# Based on: https://github.com/qemus/qemu
+#
+# Architecture:
+#   A single StatefulSet pod runs QEMU/KVM inside a container.
+#   The container downloads and installs a Linux distribution automatically,
+#   or boots from a custom ISO/image URL.
+#
+# Requirements:
+#   - Kubernetes node with /dev/kvm available (hardware virtualization)
+#   - Privileged pod or at minimum: device /dev/kvm + NET_ADMIN capability
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full chart name
+fullnameOverride: ""
+
+# ==============================================================================
+# VM Configuration
+# ==============================================================================
+vm:
+  # Linux distribution to install automatically.
+  # Common values:
+  #   "ubuntu"      Ubuntu 22.04 LTS
+  #   "ubuntu2404"  Ubuntu 24.04 LTS
+  #   "debian"      Debian 12
+  #   "fedora"      Fedora 40
+  #   "archlinux"   Arch Linux
+  #   "alpine"      Alpine Linux
+  # Ref: https://github.com/qemus/qemu#how-do-i-select-a-linux-version
+  version: "ubuntu"
+
+  # Custom ISO or disk image URL — overrides vm.version.
+  # Leave empty to use vm.version auto-download.
+  isoUrl: ""
+
+  # CPU cores allocated to the VM
+  cpu: 2
+
+  # RAM allocated to the VM (supports K, M, G suffixes)
+  ram: "2G"
+
+  # Disk size for the VM installation
+  diskSize: "20Gi"
+
+  # Storage class for the PVC (empty = cluster default)
+  storageClassName: ""
+
+  # KVM device path on the host node
+  kvmDevice: "/dev/kvm"
+
+  # TUN/TAP networking — required for VM network access
+  tun: true
+
+  # Additional environment variables passed directly to the container.
+  # See https://github.com/qemus/qemu#environment-variables for full list.
+  extraEnv: []
+
+# ==============================================================================
+# Container Image
+# ==============================================================================
+image:
+  repository: "qemux/qemu"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# ==============================================================================
+# noVNC Web Console
+#
+# Built-in browser-based display: http://<host>:8006
+# Provides a web UI to view the VM screen during installation and runtime.
+# ==============================================================================
+console:
+  service:
+    type: ClusterIP
+    port: 8006
+    # nodePort: 38006
+
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        sectionName: http
+    hostnames:
+      - vm.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+# ==============================================================================
+# SSH Service
+#
+# Exposes port 22 for SSH access to the guest.
+# Requires openssh-server installed in the guest.
+# ==============================================================================
+ssh:
+  enabled: true
+  service:
+    type: ClusterIP
+    port: 22
+    # nodePort: 30022
+
+# ==============================================================================
+# Resources
+# ==============================================================================
+resources: {}
+  # limits:
+  #   cpu: 4
+  #   memory: 4Gi
+  # requests:
+  #   cpu: 1
+  #   memory: 2Gi
+
+# ==============================================================================
+# Scheduling
+# ==============================================================================
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podAnnotations: {}
+podLabels: {}
+
+# ==============================================================================
+# Security Context
+#
+# qemus/qemu requires NET_ADMIN for TUN/TAP networking and /dev/kvm access.
+# privileged: true grants all capabilities — use only if NET_ADMIN is insufficient
+# for your cluster's configuration.
+# Ref: https://github.com/qemus/qemu
+# ==============================================================================
+podSecurityContext: {}
+
+securityContext:
+  privileged: true
+  capabilities:
+    add:
+      - NET_ADMIN

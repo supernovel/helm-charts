@@ -1,0 +1,133 @@
+{{/*
+StatefulSet for the dockur/windows QEMU container.
+
+The container runs QEMU/KVM entirely inside a pod — no KubeVirt required.
+On first boot it automatically downloads + installs the configured Windows version.
+
+Pod requirements:
+  - /dev/kvm device (hardware virtualization)
+  - /dev/net/tun device (TUN/TAP networking for VM)
+  - privileged or NET_ADMIN + SYS_ADMIN capabilities
+
+Persistent storage:
+  - /storage  — Windows disk image (PVC via volumeClaimTemplates)
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "dockur-windows.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dockur-windows.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "dockur-windows.fullname" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "dockur-windows.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "dockur-windows.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: windows
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: VERSION
+              value: {{ .Values.vm.version | quote }}
+            {{- if .Values.vm.isoUrl }}
+            - name: ISO_URL
+              value: {{ .Values.vm.isoUrl | quote }}
+            {{- end }}
+            - name: CPU_CORES
+              value: {{ .Values.vm.cpu | quote }}
+            - name: RAM_SIZE
+              value: {{ .Values.vm.ram | quote }}
+            - name: DISK_SIZE
+              value: {{ .Values.vm.diskSize | quote }}
+            - name: LANGUAGE
+              value: {{ .Values.vm.language | quote }}
+            - name: EDITION
+              value: {{ .Values.vm.edition | quote }}
+            - name: USERNAME
+              value: {{ .Values.vm.username | quote }}
+            - name: PASSWORD
+              value: {{ .Values.vm.password | quote }}
+            {{- with .Values.vm.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: console
+              containerPort: 8006
+              protocol: TCP
+            {{- if .Values.rdp.enabled }}
+            - name: rdp
+              containerPort: 3389
+              protocol: TCP
+            {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: storage
+              mountPath: /storage
+            {{- if .Values.vm.tun }}
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+            {{- end }}
+            - name: dev-kvm
+              mountPath: /dev/kvm
+      volumes:
+        - name: dev-kvm
+          hostPath:
+            path: /dev/kvm
+        {{- if .Values.vm.tun }}
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+        labels:
+          {{- include "dockur-windows.labels" . | nindent 10 }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.vm.storageClassName }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.vm.diskSize }}

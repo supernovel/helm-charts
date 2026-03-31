@@ -1,0 +1,68 @@
+Windows VM is now deploying via dockur/windows.
+
+The container will automatically download and install Windows {{ .Values.vm.version | upper }}
+on first boot. This process takes 20-60 minutes depending on your network speed
+and the selected version.
+
+  Image : {{ .Values.image.repository }}:{{ .Values.image.tag }}
+  CPU   : {{ .Values.vm.cpu }} cores
+  RAM   : {{ .Values.vm.ram }}
+  Disk  : {{ .Values.vm.diskSize }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ WEB CONSOLE (noVNC) — monitor installation progress
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{{- if .Values.console.httpRoute.enabled }}
+
+  Hostname : {{ index .Values.console.httpRoute.hostnames 0 }}
+  URL      : http://{{ index .Values.console.httpRoute.hostnames 0 }}/
+
+{{- else }}
+
+  Run the following command to forward the console port locally:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "dockur-windows.fullname" . }}-console \
+      8006:{{ .Values.console.service.port }}
+
+  Then open: http://localhost:8006/
+
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ WINDOWS CREDENTIALS (post-install)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Username : {{ .Values.vm.username }}
+  Password : {{ .Values.vm.password }}
+
+{{- if .Values.rdp.enabled }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ RDP ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Run the following command to forward the RDP port locally:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "dockur-windows.fullname" . }}-rdp \
+      3389:{{ .Values.rdp.service.port }}
+
+  Then connect via any RDP client to: localhost:3389
+
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Check installation logs:
+    kubectl logs -n {{ .Release.Namespace }} \
+      deployment/{{ include "dockur-windows.fullname" . }} -f
+
+  The VM disk is stored in a PVC. Re-installing Windows requires
+  deleting the PVC:
+    kubectl delete pvc -n {{ .Release.Namespace }} \
+      {{ include "dockur-windows.fullname" . }}-storage
+

@@ -1,0 +1,187 @@
+# Default values for dockur-windows.
+# This is a YAML-formatted file.
+#
+# Based on: https://github.com/dockur/windows
+#
+# Architecture:
+#   A single StatefulSet pod runs QEMU/KVM inside a container.
+#   The container automatically downloads + installs Windows from Microsoft,
+#   or uses a custom ISO/image URL provided via vm.version or vm.isoUrl.
+#
+# Requirements:
+#   - Kubernetes node with /dev/kvm available (hardware virtualization)
+#   - Privileged pod or at minimum: device /dev/kvm + NET_ADMIN capability
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full chart name
+fullnameOverride: ""
+
+# ==============================================================================
+# VM Configuration
+# ==============================================================================
+vm:
+  # Windows version to install automatically.
+  # dockur/windows will download the official ISO from Microsoft.
+  # Common values:
+  #   "win11"       Windows 11 Pro
+  #   "win11e"      Windows 11 Enterprise (LTSC)
+  #   "win10"       Windows 10 Pro
+  #   "win10e"      Windows 10 Enterprise (LTSC)
+  #   "win2025"     Windows Server 2025
+  #   "win2022"     Windows Server 2022
+  #   "win2019"     Windows Server 2019
+  # Ref: https://github.com/dockur/windows#how-do-i-select-the-windows-version
+  version: "win11"
+
+  # Custom ISO URL — overrides vm.version.
+  # The container will use this ISO instead of downloading from Microsoft.
+  # Leave empty to use vm.version auto-download.
+  isoUrl: ""
+
+  # CPU cores allocated to the VM
+  cpu: 2
+
+  # RAM allocated to the VM (supports K, M, G suffixes)
+  ram: "4G"
+
+  # Disk size for the Windows installation
+  # This is the size of the persistent volume claim.
+  diskSize: "64Gi"
+
+  # Storage class for the PVC (empty = cluster default)
+  storageClassName: ""
+
+  # Windows language for automatic installation
+  # Examples: "English", "Korean", "Japanese", "German"
+  language: "English"
+
+  # Windows edition to install (when using auto-download)
+  # Examples: "Professional", "Enterprise"
+  edition: "Professional"
+
+  # Windows username for the created account
+  username: "user"
+
+  # Windows password for the created account
+  password: "password"
+
+  # KVM device path on the host node
+  # Change to /dev/null to disable KVM (runs slower without hardware virt)
+  kvmDevice: "/dev/kvm"
+
+  # TUN/TAP networking — required for VM network access
+  # Set to false only if your cluster network plugin provides alternatives
+  tun: true
+
+  # Additional environment variables passed directly to the container.
+  # See https://github.com/dockur/windows#environment-variables for full list.
+  # Example:
+  #   extraEnv:
+  #     - name: ARGUMENTS
+  #       value: "-cpu host,+hypervisor"
+  #     - name: SECURE
+  #       value: "on"
+  extraEnv: []
+
+# ==============================================================================
+# Container Image
+# ==============================================================================
+image:
+  repository: "dockur/windows"
+  # Pin to a specific version tag for reproducibility.
+  # "latest" always uses the most recent release.
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# ==============================================================================
+# noVNC Web Console
+#
+# Built-in browser-based display: http://<host>:8006
+# Provides a web UI to view the VM screen and interact with the installer/desktop.
+# ==============================================================================
+console:
+  service:
+    # ClusterIP: kubectl port-forward svc/<name>-console 8006:8006
+    # NodePort:  access via <NodeIP>:<nodePort>
+    # LoadBalancer: external IP on port 8006
+    type: ClusterIP
+    port: 8006
+    # nodePort: 38006
+
+  # Gateway API HTTPRoute for external access to the noVNC console.
+  # Requires: Gateway API CRDs and a compatible Gateway controller.
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        sectionName: http
+        # namespace: default
+    hostnames:
+      - windows.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+# ==============================================================================
+# RDP Service
+#
+# Exposes port 3389 for native RDP client access.
+# RDP becomes available after Windows installation completes.
+# ==============================================================================
+rdp:
+  enabled: true
+  service:
+    # ClusterIP: kubectl port-forward svc/<name>-rdp 3389:3389
+    # NodePort:  access via <NodeIP>:<nodePort>
+    # LoadBalancer: external IP on port 3389
+    type: ClusterIP
+    port: 3389
+    # nodePort: 33389
+
+# ==============================================================================
+# Resources
+# ==============================================================================
+resources: {}
+  # limits:
+  #   cpu: 4
+  #   memory: 6Gi
+  # requests:
+  #   cpu: 2
+  #   memory: 4Gi
+
+# ==============================================================================
+# Scheduling
+# ==============================================================================
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podAnnotations: {}
+podLabels: {}
+
+# ==============================================================================
+# Security Context
+#
+# dockur/windows requires NET_ADMIN for TUN/TAP networking and /dev/kvm access.
+# privileged: true grants all capabilities — use only if NET_ADMIN is insufficient
+# for your cluster's configuration.
+# Ref: https://github.com/dockur/windows/blob/master/kubernetes.yml
+# ==============================================================================
+podSecurityContext: {}
+
+securityContext:
+  privileged: true
+  capabilities:
+    add:
+      - NET_ADMIN
+
+# ==============================================================================
+# HTTPRoute — Gateway API HTTPRoute for the noVNC console (console.httpRoute)
+# is configured above. This section is reserved for future use.
+# ==============================================================================

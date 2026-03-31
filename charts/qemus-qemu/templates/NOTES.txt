@@ -1,0 +1,59 @@
+Linux VM is now deploying via qemus/qemu.
+
+The container will automatically download and install {{ .Values.vm.version | upper }}
+on first boot. This process takes several minutes depending on your network speed.
+
+  Image : {{ .Values.image.repository }}:{{ .Values.image.tag }}
+  CPU   : {{ .Values.vm.cpu }} cores
+  RAM   : {{ .Values.vm.ram }}
+  Disk  : {{ .Values.vm.diskSize }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ WEB CONSOLE (noVNC) — monitor installation progress
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{{- if .Values.console.httpRoute.enabled }}
+
+  Hostname : {{ index .Values.console.httpRoute.hostnames 0 }}
+  URL      : http://{{ index .Values.console.httpRoute.hostnames 0 }}/
+
+{{- else }}
+
+  Run the following command to forward the console port locally:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "qemus-qemu.fullname" . }}-console \
+      8006:{{ .Values.console.service.port }}
+
+  Then open: http://localhost:8006/
+
+{{- end }}
+
+{{- if .Values.ssh.enabled }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ SSH ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Run the following command to forward the SSH port locally:
+
+    kubectl port-forward -n {{ .Release.Namespace }} \
+      svc/{{ include "qemus-qemu.fullname" . }}-ssh \
+      2222:{{ .Values.ssh.service.port }}
+
+  Then connect: ssh -p 2222 user@localhost
+
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Check installation logs:
+    kubectl logs -n {{ .Release.Namespace }} \
+      deployment/{{ include "qemus-qemu.fullname" . }} -f
+
+  The VM disk is stored in a PVC. Re-installing requires deleting the PVC:
+    kubectl delete pvc -n {{ .Release.Namespace }} \
+      {{ include "qemus-qemu.fullname" . }}-storage
+

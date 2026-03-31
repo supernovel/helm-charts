@@ -1,0 +1,48 @@
+{{/*
+Services for dockur-windows:
+  - <name>-console : noVNC web display (port 8006)
+  - <name>-rdp     : Windows RDP (port 3389, when rdp.enabled=true)
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dockur-windows.fullname" . }}-console
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dockur-windows.labels" . | nindent 4 }}
+    app.kubernetes.io/component: console
+spec:
+  type: {{ .Values.console.service.type }}
+  selector:
+    {{- include "dockur-windows.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: console
+      port: {{ .Values.console.service.port }}
+      targetPort: console
+      protocol: TCP
+      {{- if and (eq .Values.console.service.type "NodePort") .Values.console.service.nodePort }}
+      nodePort: {{ .Values.console.service.nodePort }}
+      {{- end }}
+{{- if .Values.rdp.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dockur-windows.fullname" . }}-rdp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dockur-windows.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rdp
+spec:
+  type: {{ .Values.rdp.service.type }}
+  selector:
+    {{- include "dockur-windows.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: rdp
+      port: {{ .Values.rdp.service.port }}
+      targetPort: rdp
+      protocol: TCP
+      {{- if and (eq .Values.rdp.service.type "NodePort") .Values.rdp.service.nodePort }}
+      nodePort: {{ .Values.rdp.service.nodePort }}
+      {{- end }}
+{{- end }}

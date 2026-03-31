@@ -1,0 +1,21 @@
+apiVersion: v2
+name: qemus-qemu
+description: >
+  Linux Virtual Machine running inside a container using QEMU/KVM via qemus/qemu.
+  No KubeVirt required. Supports various Linux distributions with a built-in
+  noVNC web console on port 8006 and optional SSH access.
+type: application
+version: 0.1.0
+appVersion: "2025"
+keywords:
+  - qemu
+  - kvm
+  - linux
+  - vm
+  - novnc
+  - ssh
+  - qemus
+home: https://github.com/qemus/qemu
+sources:
+  - https://github.com/qemus/qemu
+maintainers: []

@@ -1,0 +1,21 @@
+apiVersion: v2
+name: dockur-windows
+description: >
+  Windows Virtual Machine running inside a container using QEMU/KVM via dockur/windows.
+  No KubeVirt required. Supports automatic Windows installation from ISO with
+  built-in noVNC web console on port 8006 and optional RDP access.
+type: application
+version: 0.1.0
+appVersion: "2025"
+keywords:
+  - qemu
+  - kvm
+  - windows
+  - vm
+  - novnc
+  - rdp
+  - dockur
+home: https://github.com/dockur/windows
+sources:
+  - https://github.com/dockur/windows
+maintainers: []
