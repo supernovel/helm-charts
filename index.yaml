@@ -400,6 +400,25 @@ entries:
   kubevirt-vm:
   - apiVersion: v2
     appVersion: "12"
+    created: "2026-03-31T02:37:40.999269271Z"
+    description: 'Debian Virtual Machine deployment using KubeVirt with in-guest VNC/SSH
+      web console access. Requires KubeVirt and CDI (Containerized Data Importer)
+      installed in the cluster. '
+    digest: 938053ad8b3a40f8ecadcbda1124387d13c314c3fe87b11c6d1d0886da93698c
+    keywords:
+    - kubevirt
+    - virtualization
+    - debian
+    - novnc
+    - vm
+    - kvm
+    name: kubevirt-vm
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/kubevirt-vm-0.1.8/kubevirt-vm-0.1.8.tgz
+    version: 0.1.8
+  - apiVersion: v2
+    appVersion: "12"
     created: "2026-03-29T06:45:28.896273576Z"
     description: 'Debian Virtual Machine deployment using KubeVirt with in-guest VNC/SSH
       web console access. Requires KubeVirt and CDI (Containerized Data Importer)
@@ -436,6 +455,29 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/kubevirt-vm-0.1.6/kubevirt-vm-0.1.6.tgz
     version: 0.1.6
+  kubevirt-windows-vm:
+  - apiVersion: v2
+    appVersion: "11"
+    created: "2026-03-31T02:37:41.191385174Z"
+    description: 'Windows Virtual Machine deployment using KubeVirt with QEMU VNC
+      console access and RDP. Supports Windows Server 2022 / Windows 10 / Windows
+      11. Requires KubeVirt and CDI (Containerized Data Importer) installed in the
+      cluster. '
+    digest: a4e51a036c29e1829627210931d97eb6d543c197e14d73bc95a9745b350887c1
+    keywords:
+    - kubevirt
+    - virtualization
+    - windows
+    - novnc
+    - vm
+    - kvm
+    - rdp
+    - sysprep
+    name: kubevirt-windows-vm
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/kubevirt-windows-vm-0.1.0/kubevirt-windows-vm-0.1.0.tgz
+    version: 0.1.0
   novnc-vm:
   - apiVersion: v2
     appVersion: "12"
@@ -666,4 +708,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2026-03-29T06:45:28.896369735Z"
+generated: "2026-03-31T02:37:41.191522369Z"
