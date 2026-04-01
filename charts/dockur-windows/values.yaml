@@ -87,7 +87,7 @@ vm:
 # Container Image
 # ==============================================================================
 image:
-  repository: "dockur/windows"
+  repository: "dockurr/windows"
   # Pin to a specific version tag for reproducibility.
   # "latest" always uses the most recent release.
   tag: "latest"
