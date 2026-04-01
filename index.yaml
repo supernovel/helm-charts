@@ -313,6 +313,29 @@ entries:
   dockur-windows:
   - apiVersion: v2
     appVersion: "2025"
+    created: "2026-04-01T06:00:39.555566931Z"
+    description: 'Windows Virtual Machine running inside a container using QEMU/KVM
+      via dockur/windows. No KubeVirt required. Supports automatic Windows installation
+      from ISO with built-in noVNC web console on port 8006 and optional RDP access. '
+    digest: c821f4a114da1a3be0097ba54a0a6379bae56846fa5ca8ca300d85cdee31aef6
+    home: https://github.com/dockur/windows
+    keywords:
+    - qemu
+    - kvm
+    - windows
+    - vm
+    - novnc
+    - rdp
+    - dockur
+    name: dockur-windows
+    sources:
+    - https://github.com/dockur/windows
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/dockur-windows-0.1.2/dockur-windows-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: "2025"
     created: "2026-03-31T04:43:12.912282574Z"
     description: 'Windows Virtual Machine running inside a container using QEMU/KVM
       via dockur/windows. No KubeVirt required. Supports automatic Windows installation
@@ -499,6 +522,28 @@ entries:
     - https://github.com/supernovel/helm-charts/releases/download/kubevirt-vm-0.1.6/kubevirt-vm-0.1.6.tgz
     version: 0.1.6
   kubevirt-windows-vm:
+  - apiVersion: v2
+    appVersion: "11"
+    created: "2026-04-01T06:00:39.847437174Z"
+    description: 'Windows Virtual Machine deployment using KubeVirt with QEMU VNC
+      console access and RDP. Supports Windows Server 2022 / Windows 10 / Windows
+      11. Requires KubeVirt and CDI (Containerized Data Importer) installed in the
+      cluster. '
+    digest: 725d34b2ac1ca0d257ceae12ba9e12f9dd9d27cae8485f0fda0a74713cd0d75e
+    keywords:
+    - kubevirt
+    - virtualization
+    - windows
+    - novnc
+    - vm
+    - kvm
+    - rdp
+    - sysprep
+    name: kubevirt-windows-vm
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/kubevirt-windows-vm-0.1.1/kubevirt-windows-vm-0.1.1.tgz
+    version: 0.1.1
   - apiVersion: v2
     appVersion: "11"
     created: "2026-03-31T02:37:41.191385174Z"
@@ -703,6 +748,29 @@ entries:
   qemus-qemu:
   - apiVersion: v2
     appVersion: "2025"
+    created: "2026-04-01T06:00:40.054169633Z"
+    description: 'Linux Virtual Machine running inside a container using QEMU/KVM
+      via qemus/qemu. No KubeVirt required. Supports various Linux distributions with
+      a built-in noVNC web console on port 8006 and optional SSH access. '
+    digest: 224a32d74d4984fb8b993f06053837ffca3a414965dcc8f3f298cb50471a1829
+    home: https://github.com/qemus/qemu
+    keywords:
+    - qemu
+    - kvm
+    - linux
+    - vm
+    - novnc
+    - ssh
+    - qemus
+    name: qemus-qemu
+    sources:
+    - https://github.com/qemus/qemu
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/qemus-qemu-0.1.2/qemus-qemu-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: "2025"
     created: "2026-03-31T04:43:13.08121385Z"
     description: 'Linux Virtual Machine running inside a container using QEMU/KVM
       via qemus/qemu. No KubeVirt required. Supports various Linux distributions with
@@ -775,4 +843,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2026-04-01T05:40:09.140080789Z"
+generated: "2026-04-01T06:00:40.054298753Z"
