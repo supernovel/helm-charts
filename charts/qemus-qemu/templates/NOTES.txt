@@ -1,6 +1,6 @@
 Linux VM is now deploying via qemus/qemu.
 
-The container will automatically download and install {{ .Values.vm.version | upper }}
+The container will automatically download and install {{ .Values.vm.boot | upper }}
 on first boot. This process takes several minutes depending on your network speed.
 
   Image : {{ .Values.image.repository }}:{{ .Values.image.tag }}
