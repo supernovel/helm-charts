@@ -5,7 +5,7 @@ description: >
   No KubeVirt required. Supports automatic Windows installation from ISO with
   built-in noVNC web console on port 8006 and optional RDP access.
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: "2025"
 keywords:
   - qemu
