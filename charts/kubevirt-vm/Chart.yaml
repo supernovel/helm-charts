@@ -4,7 +4,7 @@ description: >
   Debian Virtual Machine deployment using KubeVirt with in-guest VNC/SSH web console access.
   Requires KubeVirt and CDI (Containerized Data Importer) installed in the cluster.
 type: application
-version: 0.1.8
+version: 0.1.9
 appVersion: "12"
 keywords:
   - kubevirt

@@ -20,8 +20,14 @@ spec:
   {{- end }}
   rules:
     {{- range .Values.webssh.httpRoute.rules }}
-    - matches:
-        {{- toYaml .matches | nindent 8 }}
+    - {{- with .matches }}
+      matches:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .filters }}
+      filters:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       backendRefs:
         - name: {{ include "kubevirt-vm.fullname" $ }}-webssh
           port: {{ $.Values.webssh.service.port }}
