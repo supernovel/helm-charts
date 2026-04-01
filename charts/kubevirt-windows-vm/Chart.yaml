@@ -5,7 +5,7 @@ description: >
   Supports Windows Server 2022 / Windows 10 / Windows 11.
   Requires KubeVirt and CDI (Containerized Data Importer) installed in the cluster.
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: "11"
 keywords:
   - kubevirt
