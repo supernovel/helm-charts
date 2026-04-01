@@ -313,6 +313,29 @@ entries:
   dockur-windows:
   - apiVersion: v2
     appVersion: "2025"
+    created: "2026-04-01T08:38:20.229149682Z"
+    description: 'Windows Virtual Machine running inside a container using QEMU/KVM
+      via dockur/windows. No KubeVirt required. Supports automatic Windows installation
+      from ISO with built-in noVNC web console on port 8006 and optional RDP access. '
+    digest: 82121853de59a3e11f510179db1f10027a5870b223ffb5154efed66f9b88917e
+    home: https://github.com/dockur/windows
+    keywords:
+    - qemu
+    - kvm
+    - windows
+    - vm
+    - novnc
+    - rdp
+    - dockur
+    name: dockur-windows
+    sources:
+    - https://github.com/dockur/windows
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/dockur-windows-0.1.4/dockur-windows-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
+    appVersion: "2025"
     created: "2026-04-01T08:20:13.027073378Z"
     description: 'Windows Virtual Machine running inside a container using QEMU/KVM
       via dockur/windows. No KubeVirt required. Supports automatic Windows installation
@@ -889,4 +912,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2026-04-01T08:22:30.370786044Z"
+generated: "2026-04-01T08:38:20.229275807Z"
