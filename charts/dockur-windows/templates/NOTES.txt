@@ -1,6 +1,6 @@
 Windows VM is now deploying via dockur/windows.
 
-The container will automatically download and install Windows {{ .Values.vm.version | upper }}
+The container will automatically download and install Windows {{ .Values.vm.version }}
 on first boot. This process takes 20-60 minutes depending on your network speed
 and the selected version.
 
