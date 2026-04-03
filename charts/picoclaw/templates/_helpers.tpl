@@ -197,13 +197,13 @@ Ref: https://docs.picoclaw.io/docs/configuration/config-reference
   ],
   "channels": {
     "telegram": {
-      "enabled": {{ $channels.telegram.enabled }},
+      "enabled": {{ $channels.telegram.enabled }}
     },
     "discord": {
-      "enabled": {{ $channels.discord.enabled }},
+      "enabled": {{ $channels.discord.enabled }}
     },
     "slack": {
-      "enabled": {{ $channels.slack.enabled }},
+      "enabled": {{ $channels.slack.enabled }}
     }
   },
   "tools": {
