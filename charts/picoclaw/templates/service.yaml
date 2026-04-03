@@ -5,10 +5,10 @@ metadata:
   labels:
     {{- include "picoclaw.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: ClusterIP
   ports:
     - name: http
-      port: {{ .Values.service.port }}
+      port: {{ .Values.config.gateway.port }}
       targetPort: http
       protocol: TCP
   selector:

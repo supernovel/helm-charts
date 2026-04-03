@@ -13,7 +13,7 @@ fullnameOverride: ""
 
 image:
   repository: "ghcr.io/sipeed/picoclaw"
-  tag: "v0.2.5-launcher"  # Defaults to appVersion in Chart.yaml
+  tag: "v0.2.5"  # Defaults to appVersion in Chart.yaml
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -116,13 +116,6 @@ persistence:
   size: "1Gi"
   # Existing PVC name; leave empty to create a new one.
   existingClaim: ""
-
-# ==============================================================================
-# Service
-# ==============================================================================
-service:
-  type: ClusterIP
-  port: 18800
 
 # ==============================================================================
 # Gateway API HTTPRoute — needed for webhook-based channels

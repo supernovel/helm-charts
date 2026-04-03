@@ -8,6 +8,11 @@ spec:
   # NOTE: Keep replicas at 1 — running multiple instances against the same
   # channel (e.g. Telegram getUpdates) causes conflicts.
   replicas: {{ .Values.replicaCount }}
+  # Recreate strategy: terminate the existing pod completely before starting the
+  # replacement. Required for ReadWriteOnce PVCs — RollingUpdate would stall
+  # because the new pod cannot attach the volume while the old pod still holds it.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "picoclaw.selectorLabels" . | nindent 6 }}
@@ -75,14 +80,14 @@ spec:
               readOnly: true
 
       containers:
-        - name: webui
+        - name: picoclaw-gateway
           image: "{{ .Values.image.repository }}:{{ include "picoclaw.imageTag" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           # Run picoclaw web UI (accessible at port 18800)
-          command: ["picoclaw-launcher", "-no-browser", "-public"]
+          command: ["picoclaw", "gateway"]
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.config.gateway.port }}
               protocol: TCP
           livenessProbe:
             tcpSocket:
