@@ -99,6 +99,11 @@ spec:
               value: "/root/.picoclaw"
             - name: PICOCLAW_CONFIG
               value: "/root/.picoclaw/config.json"
+            - name: PICOCLAW_LAUNCHER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "picoclaw.launcherSecretName" . }}
+                  key: token
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

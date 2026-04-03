@@ -94,6 +94,13 @@ Ref: https://docs.picoclaw.io/docs/configuration/config-reference#security-confi
 {{- end }}
 
 {{/*
+Secret name for the launcher token (PICOCLAW_LAUNCHER_TOKEN).
+*/}}
+{{- define "picoclaw.launcherSecretName" -}}
+{{- include "picoclaw.fullname" . }}-launcher
+{{- end }}
+
+{{/*
 Render .security.yml — all sensitive credentials in one place.
 picoclaw deep-merges this file into config at startup (config.json wins on conflict).
 

@@ -43,3 +43,12 @@ Enabled channels:
 {{- if .Values.config.channels.slack.enabled }}  - Slack{{ end }}
 
 Docs: https://docs.picoclaw.io/
+
+Launcher Token (PICOCLAW_LAUNCHER_TOKEN):
+{{- $launcherSecret := lookup "v1" "Secret" .Release.Namespace (include "picoclaw.launcherSecretName" .) }}
+{{- if and $launcherSecret $launcherSecret.data (index $launcherSecret.data "token") }}
+  {{ index $launcherSecret.data "token" | b64dec }}
+{{- else }}
+  (token will be available after the pod starts — retrieve with)
+  kubectl get secret -n {{ .Release.Namespace }} {{ include "picoclaw.launcherSecretName" . }} -o jsonpath='{.data.token}' | base64 -d
+{{- end }}

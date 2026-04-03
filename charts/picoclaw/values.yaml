@@ -183,6 +183,16 @@ serviceAccount:
   automount: false
 
 # ==============================================================================
+# Launcher Token
+# Token used for PICOCLAW_LAUNCHER_TOKEN.
+# Leave empty to auto-generate a random 32-character token on first install.
+# The generated token is persisted in a Kubernetes Secret and reused on upgrades.
+# Set an explicit value to pin the token.
+# ==============================================================================
+launcher:
+  token: ""
+
+# ==============================================================================
 # Extra environment variables injected into the gateway pod.
 # Useful for PICOCLAW_* overrides not covered by values.yaml.
 # ==============================================================================
