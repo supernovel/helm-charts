@@ -29,6 +29,6 @@ spec:
       {{- end }}
       backendRefs:
         - name: {{ include "picoclaw.fullname" $ }}
-          port: {{ $.Values.service.port }}
+          port: {{ $.Values.config.gateway.port }}
     {{- end }}
 {{- end }}

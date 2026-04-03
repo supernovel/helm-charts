@@ -3,7 +3,7 @@ PicoClaw Gateway has been deployed!
 Release: {{ .Release.Name }}
 Namespace: {{ .Release.Namespace }}
 
-Gateway is listening on port {{ .Values.config.gateway.port }} ({{ .Values.service.type }}).
+Gateway is listening on port {{ .Values.config.gateway.port }}.
 
 {{- if .Values.httpRoute.enabled }}
 
@@ -32,7 +32,7 @@ enable httpRoute in values.yaml:
 {{- end }}
 
 To port-forward the gateway locally:
-  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "picoclaw.fullname" . }} 18790:{{ .Values.service.port }}
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "picoclaw.fullname" . }} 18790:{{ .Values.config.gateway.port }}
 
 To view gateway logs:
   kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "picoclaw.name" . }}" -f
