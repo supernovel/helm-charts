@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "picoclaw.fullname" . }}
+  labels:
+    {{- include "picoclaw.labels" . | nindent 4 }}
+spec:
+  # NOTE: Keep replicas at 1 — running multiple instances against the same
+  # channel (e.g. Telegram getUpdates) causes conflicts.
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "picoclaw.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "picoclaw.configJson" . | sha256sum }}
+        checksum/secret: {{ toJson .Values.config | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "picoclaw.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "picoclaw.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      # ---------------------------------------------------------------------------
+      # Init container: seeds config.json and .security.yml into the persistent
+      # home volume so manual edits survive pod restarts.
+      #
+      # syncMode: "init"   — copy only if the file does not yet exist (default)
+      #                      manual edits made inside the pod are preserved.
+      # syncMode: "always" — always overwrite from Helm values on every start.
+      #                      the ConfigMap/Secret is always the source of truth.
+      # ---------------------------------------------------------------------------
+      initContainers:
+        - name: config-init
+          image: "alpine:3.19"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              {{- if eq .Values.config.syncMode "always" }}
+              echo "syncMode=always: overwriting config files from Helm values"
+              cp /tmp/config-tpl/config.json /root/.picoclaw/config.json
+              cp /tmp/security-tpl/.security.yml /root/.picoclaw/.security.yml
+              {{- else }}
+              echo "syncMode=init: seeding config files only if absent"
+              [ -f /root/.picoclaw/config.json ] || cp /tmp/config-tpl/config.json /root/.picoclaw/config.json
+              [ -f /root/.picoclaw/.security.yml ] || cp /tmp/security-tpl/.security.yml /root/.picoclaw/.security.yml
+              {{- end }}
+              echo "config-init done"
+          volumeMounts:
+            - name: data
+              mountPath: /root/.picoclaw
+              subPath: home
+            - name: config-tpl
+              mountPath: /tmp/config-tpl
+              readOnly: true
+            - name: security-tpl
+              mountPath: /tmp/security-tpl
+              readOnly: true
+
+      containers:
+        - name: webui
+          image: "{{ .Values.image.repository }}:{{ include "picoclaw.imageTag" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Run picoclaw web UI (accessible at port 18800)
+          command: ["picoclaw-launcher", "-no-browser", "-public"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: PICOCLAW_HOME
+              value: "/root/.picoclaw"
+            - name: PICOCLAW_CONFIG
+              value: "/root/.picoclaw/config.json"
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            # Persistent home dir — config.json and .security.yml live here
+            - name: data
+              mountPath: /root/.picoclaw
+              subPath: home
+            # Persistent workspace — sessions, memory, cron, etc.
+            - name: data
+              mountPath: {{ .Values.config.agents.defaults.workspace }}
+              subPath: workspace
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+      volumes:
+        # ConfigMap template — read by init container only
+        - name: config-tpl
+          configMap:
+            name: {{ include "picoclaw.configMapName" . }}
+        # Security secret template — read by init container only
+        - name: security-tpl
+          secret:
+            secretName: {{ include "picoclaw.securitySecretName" . }}
+            items:
+              - key: .security.yml
+                path: .security.yml
+        # Single persistent volume — subPath:home for ~/.picoclaw, subPath:workspace for agent data
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "picoclaw.pvcName" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,195 @@
+# Default values for picoclaw.
+# This is a YAML-formatted file.
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full chart name
+fullnameOverride: ""
+
+# ==============================================================================
+# PicoClaw Gateway Configuration
+# Ref: https://docs.picoclaw.io/docs/configuration
+# ==============================================================================
+
+image:
+  repository: "ghcr.io/sipeed/picoclaw"
+  tag: ""  # Defaults to appVersion in Chart.yaml
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# Number of gateway replicas.
+# NOTE: Only 1 replica is supported per channel (e.g., Telegram getUpdates conflicts).
+replicaCount: 1
+
+# ==============================================================================
+# PicoClaw config.json
+# All values here are rendered into /root/.picoclaw/config.json inside the pod.
+# Sensitive fields (api_key, tokens) are stored in a Kubernetes Secret and
+# injected via environment variables (PICOCLAW_* pattern).
+# Ref: https://docs.picoclaw.io/docs/configuration/config-reference
+# ==============================================================================
+config:
+  # -- Config file sync mode for the init container.
+  # "init"   — copy config.json + .security.yml to the home PVC only if the
+  #             files do not yet exist. Manual edits inside the pod are preserved
+  #             across restarts (recommended for production).
+  # "always" — overwrite config files from Helm values on every pod start.
+  #             Use this when you want Helm to be the single source of truth.
+  syncMode: "init"
+
+  # -- Agent default settings
+  agents:
+    defaults:
+      workspace: "/data/workspace"
+      restrictToWorkspace: false
+      modelName: "default-model"
+      maxTokens: 32768
+      maxToolIterations: 50
+
+  # -- LLM provider definitions.
+  # apiKey is extracted by the template into .security.yml (Secret) at deploy time.
+  # Ref: https://docs.picoclaw.io/docs/configuration/model-list
+  modelList:
+    - modelName: "default-model"
+      model: "openai/gpt-4o"
+      apiKey: ""           # → .security.yml Secret (picoclaw merges at startup)
+      apiBase: "https://api.openai.com/v1"
+      requestTimeout: 120
+
+  # -- Gateway listen settings
+  # host is forced to "0.0.0.0" inside the container so the Service can reach it.
+  gateway:
+    host: "0.0.0.0"
+    port: 18790
+
+  # -- Chat channel integrations (all disabled by default)
+  # Ref: https://docs.picoclaw.io/docs/channels
+  channels:
+    telegram:
+      enabled: false
+      token: ""           # → .security.yml channels.telegram.token
+    discord:
+      enabled: false
+      token: ""           # → .security.yml channels.discord.token
+    slack:
+      enabled: false
+      botToken: ""        # → .security.yml channels.slack.bot_token
+      appToken: ""        # → .security.yml channels.slack.app_token
+
+  # -- Web search tools
+  tools:
+    web:
+      duckduckgo:
+        enabled: true
+        maxResults: 5
+      brave:
+        enabled: false
+        apiKey: ""         # → .security.yml tools.web.brave.api_key
+        maxResults: 5
+      perplexity:
+        enabled: false
+        apiKey: ""         # → .security.yml tools.web.perplexity.api_key
+        maxResults: 5
+    mcp:
+      enabled: false
+    cron:
+      execTimeoutMinutes: 5
+    exec:
+      enableDenyPatterns: true
+
+  # -- Heartbeat periodic task
+  heartbeat:
+    enabled: true
+    interval: 30
+
+# ==============================================================================
+# Persistent Volume
+# A single PVC is used, with subPaths to separate concerns:
+#   subPath: home      → /root/.picoclaw  (config.json, .security.yml, etc.)
+#   subPath: workspace → /data/workspace  (sessions, memory, cron jobs)
+# ==============================================================================
+persistence:
+  enabled: true
+  storageClassName: ""
+  accessMode: ReadWriteOnce
+  size: "1Gi"
+  # Existing PVC name; leave empty to create a new one.
+  existingClaim: ""
+
+# ==============================================================================
+# Service
+# ==============================================================================
+service:
+  type: ClusterIP
+  port: 18800
+
+# ==============================================================================
+# Gateway API HTTPRoute — needed for webhook-based channels
+# (Feishu, DingTalk, WeCom, LINE) and/or general external access.
+# Requires: Gateway API CRDs and a compatible Gateway controller.
+# ==============================================================================
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs:
+    - name: gateway
+      sectionName: http
+      # namespace: default
+  hostnames:
+    - picoclaw.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+# ==============================================================================
+# Resource limits
+# ==============================================================================
+resources: {}
+  # limits:
+  #   cpu: 200m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 50m
+  #   memory: 64Mi
+
+# ==============================================================================
+# Pod scheduling
+# ==============================================================================
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  # readOnlyRootFilesystem: true
+
+# ==============================================================================
+# ServiceAccount
+# ==============================================================================
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+  automount: false
+
+# ==============================================================================
+# Extra environment variables injected into the gateway pod.
+# Useful for PICOCLAW_* overrides not covered by values.yaml.
+# ==============================================================================
+extraEnv: []
+  # - name: PICOCLAW_HEARTBEAT_ENABLED
+  #   value: "false"
+
+# Extra volumes / mounts (e.g., custom skills, AGENTS.md overrides)
+extraVolumes: []
+extraVolumeMounts: []

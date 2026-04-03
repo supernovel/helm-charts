@@ -1,0 +1,17 @@
+{{/*
+  configmap.yaml — stores config.json (no credentials).
+  All sensitive values are consolidated in .security.yml (secret.yaml):
+    model api_keys     → model_list.<name>.api_keys
+    channel tokens     → channels.<name>.token / bot_token / app_token
+    tool api_keys      → tools.web.<name>.api_key
+  Ref: https://docs.picoclaw.io/docs/configuration/config-reference
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "picoclaw.configMapName" . }}
+  labels:
+    {{- include "picoclaw.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {{- include "picoclaw.configJson" . | nindent 4 }}

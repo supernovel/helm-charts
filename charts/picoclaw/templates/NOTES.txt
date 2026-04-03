@@ -1,0 +1,45 @@
+PicoClaw Gateway has been deployed!
+
+Release: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+Gateway is listening on port {{ .Values.config.gateway.port }} ({{ .Values.service.type }}).
+
+{{- if .Values.httpRoute.enabled }}
+
+Webhook endpoints are accessible via HTTPRoute:
+{{- range .Values.httpRoute.hostnames }}
+  http://{{ . }}/
+{{- end }}
+
+{{- else }}
+
+HTTPRoute is disabled. To expose webhook channels (Feishu, DingTalk, WeCom, LINE)
+enable httpRoute in values.yaml:
+  httpRoute:
+    enabled: true
+    parentRefs:
+      - name: gateway
+        sectionName: http
+    hostnames:
+      - picoclaw.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+{{- end }}
+
+To port-forward the gateway locally:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "picoclaw.fullname" . }} 18790:{{ .Values.service.port }}
+
+To view gateway logs:
+  kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "picoclaw.name" . }}" -f
+
+Enabled channels:
+{{- if .Values.config.channels.telegram.enabled }}  - Telegram{{ end }}
+{{- if .Values.config.channels.discord.enabled }}  - Discord{{ end }}
+{{- if .Values.config.channels.slack.enabled }}  - Slack{{ end }}
+
+Docs: https://docs.picoclaw.io/

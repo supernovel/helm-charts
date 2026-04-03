@@ -1,0 +1,66 @@
+# Example values.yaml for PicoClaw Gateway
+# Deploy with:
+#   helm install picoclaw ./charts/picoclaw -f values.example.yaml
+
+config:
+  agents:
+    defaults:
+      modelName: "claude-sonnet-4.6"
+      maxTokens: 32768
+      maxToolIterations: 50
+
+  modelList:
+    - modelName: "claude-sonnet-4.6"
+      model: "anthropic/claude-sonnet-4-6"
+      apiKey: "sk-ant-your-anthropic-key"
+      apiBase: "https://api.anthropic.com/v1"
+      requestTimeout: 120
+
+  channels:
+    discord:
+      enabled: true
+      token: "YOUR_DISCORD_BOT_TOKEN"
+
+  tools:
+    web:
+      duckduckgo:
+        enabled: true
+        apiKey: "YOUR_DUCKDUCKGO_KEY"
+        maxResults: 5
+    mcp:
+      enabled: false
+    cron:
+      execTimeoutMinutes: 5
+    exec:
+      enableDenyPatterns: true
+
+  heartbeat:
+    enabled: true
+    interval: 30
+
+persistence:
+  enabled: true
+  size: "2Gi"
+
+httpRoute:
+  enabled: true
+  annotations: {}
+  parentRefs:
+    - name: gateway
+      sectionName: http
+      # namespace: default
+  hostnames:
+    - picoclaw.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
