@@ -165,9 +165,6 @@ client:
     tag: "33ae9bf"
     pullPolicy: IfNotPresent
 
-  imagePullSecrets: []
-    # - name: my-registry-secret
-
   port: 3000
 
   # ==============================================================================
