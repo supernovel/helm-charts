@@ -224,16 +224,20 @@ Ref: https://docs.picoclaw.io/docs/configuration/config-reference
   ],
   "channels": {
     "telegram": {
-      "enabled": {{ $channels.telegram.enabled }}
+      "enabled": {{ $channels.telegram.enabled }},
+      "allow_from": []
     },
     "discord": {
-      "enabled": {{ $channels.discord.enabled }}
+      "enabled": {{ $channels.discord.enabled }},
+      "allow_from": []
     },
     "slack": {
-      "enabled": {{ $channels.slack.enabled }}
+      "enabled": {{ $channels.slack.enabled }},
+      "allow_from": []
     },
     "pico": {
-      "enabled": true
+      "enabled": true,
+      "allow_from": []
     }
   },
   "tools": {
