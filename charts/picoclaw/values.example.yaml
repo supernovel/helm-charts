@@ -43,10 +43,6 @@ config:
 # gatewayToken: leave empty to auto-generate, or set an explicit value to pin.
 # ==============================================================================
 client:
-  image:
-    repository: "software-park/picoclaw-client"
-    tag: "ba0a73b"
-    pullPolicy: IfNotPresent
   port: 3000
   gatewayToken: ""  # auto-generated if empty
   httpRoute:

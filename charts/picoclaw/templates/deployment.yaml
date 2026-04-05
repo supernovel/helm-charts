@@ -167,13 +167,15 @@ spec:
           env:
             - name: PICOCLAW_GATEWAY_URL
               value: "http://localhost:{{ .Values.config.gateway.port }}"
-            - name: PICOCLAW_GATEWAY_TOKEN
+            - name: PICOCLAW_CHANNEL_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ include "picoclaw.clientSecretName" . }}
                   key: gateway-token
-            - name: PICOCLAW_DATA_DIR
+            - name: DATA_DIR
               value: "/data"
+            - name: PICOCLAW_PID_FILE
+              value: "/picoclaw/.picoclaw.pid"
             - name: PICOCLAW_CONFIG
               value: "/picoclaw/config.json"
             - name: PICOCLAW_WORKSPACE_DIR
