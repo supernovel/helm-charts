@@ -4,18 +4,18 @@ Release: {{ .Release.Name }}
 Namespace: {{ .Release.Namespace }}
 
 Gateway is listening on port {{ .Values.config.gateway.port }}.
+PicoClaw Client is listening on port {{ .Values.client.port }}.
 
 {{- if .Values.httpRoute.enabled }}
 
-Webhook endpoints are accessible via HTTPRoute:
+Client is accessible via HTTPRoute:
 {{- range .Values.httpRoute.hostnames }}
   http://{{ . }}/
 {{- end }}
 
 {{- else }}
 
-HTTPRoute is disabled. To expose webhook channels (Feishu, DingTalk, WeCom, LINE)
-enable httpRoute in values.yaml:
+HTTPRoute is disabled. To expose the client enable httpRoute in values.yaml:
   httpRoute:
     enabled: true
     parentRefs:
@@ -31,24 +31,26 @@ enable httpRoute in values.yaml:
 
 {{- end }}
 
-To port-forward the gateway locally:
-  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "picoclaw.fullname" . }} 18790:{{ .Values.config.gateway.port }}
+To port-forward the client locally:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "picoclaw.fullname" . }} {{ .Values.client.port }}:{{ .Values.client.port }}
 
-To view gateway logs:
-  kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "picoclaw.name" . }}" -f
+To view logs:
+  kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "picoclaw.name" . }}" -c picoclaw-gateway -f
+  kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "picoclaw.name" . }}" -c picoclaw-client -f
 
 Enabled channels:
 {{- if .Values.config.channels.telegram.enabled }}  - Telegram{{ end }}
 {{- if .Values.config.channels.discord.enabled }}  - Discord{{ end }}
 {{- if .Values.config.channels.slack.enabled }}  - Slack{{ end }}
+  - Pico (always enabled)
+
+Gateway Token (PICOCLAW_GATEWAY_TOKEN):
+{{- $clientSecret := lookup "v1" "Secret" .Release.Namespace (include "picoclaw.clientSecretName" .) }}
+{{- if and $clientSecret $clientSecret.data (index $clientSecret.data "gateway-token") }}
+  {{ index $clientSecret.data "gateway-token" | b64dec }}
+{{- else }}
+  (token will be available after first install — retrieve with)
+  kubectl get secret -n {{ .Release.Namespace }} {{ include "picoclaw.clientSecretName" . }} -o jsonpath='{.data.gateway-token}' | base64 -d
+{{- end }}
 
 Docs: https://docs.picoclaw.io/
-
-Launcher Token (PICOCLAW_LAUNCHER_TOKEN):
-{{- $launcherSecret := lookup "v1" "Secret" .Release.Namespace (include "picoclaw.launcherSecretName" .) }}
-{{- if and $launcherSecret $launcherSecret.data (index $launcherSecret.data "token") }}
-  {{ index $launcherSecret.data "token" | b64dec }}
-{{- else }}
-  (token will be available after the pod starts — retrieve with)
-  kubectl get secret -n {{ .Release.Namespace }} {{ include "picoclaw.launcherSecretName" . }} -o jsonpath='{.data.token}' | base64 -d
-{{- end }}

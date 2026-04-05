@@ -25,7 +25,6 @@ config:
     web:
       duckduckgo:
         enabled: true
-        apiKey: "YOUR_DUCKDUCKGO_KEY"
         maxResults: 5
     mcp:
       enabled: false
@@ -37,6 +36,21 @@ config:
   heartbeat:
     enabled: true
     interval: 30
+
+# ==============================================================================
+# PicoClaw Client Sidecar
+# The client image is hosted on a private registry — configure pullSecrets.
+# gatewayToken: leave empty to auto-generate, or set an explicit value to pin.
+# ==============================================================================
+client:
+  image:
+    repository: "software-park/picoclaw-client"
+    tag: "33ae9bf"
+    pullPolicy: IfNotPresent
+    pullSecrets:
+      - name: my-registry-secret
+  port: 3000
+  gatewayToken: ""  # auto-generated if empty
 
 persistence:
   enabled: true

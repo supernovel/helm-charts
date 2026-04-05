@@ -11,5 +11,9 @@ spec:
       port: {{ .Values.config.gateway.port }}
       targetPort: http
       protocol: TCP
+    - name: client-http
+      port: {{ .Values.client.port }}
+      targetPort: client-http
+      protocol: TCP
   selector:
     {{- include "picoclaw.selectorLabels" . | nindent 4 }}

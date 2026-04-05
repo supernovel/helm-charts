@@ -2,11 +2,11 @@ apiVersion: v2
 name: picoclaw
 description: >
   PicoClaw — Ultra-lightweight AI assistant gateway in Go.
-  Connects to Telegram, Discord, Slack, DingTalk, Feishu, WeCom, LINE, QQ and more.
+  Connects to Telegram, Discord, Slack and Web client.
   Ref: https://docs.picoclaw.io/
 
 type: application
-version: 0.1.5
+version: 0.2.0
 appVersion: "v0.2.5"
 
 keywords:

@@ -176,14 +176,32 @@ serviceAccount:
   automount: false
 
 # ==============================================================================
-# Launcher Token
-# Token used for PICOCLAW_LAUNCHER_TOKEN.
-# Leave empty to auto-generate a random 32-character token on first install.
-# The generated token is persisted in a Kubernetes Secret and reused on upgrades.
-# Set an explicit value to pin the token.
+# PicoClaw Client Sidecar
+# Runs alongside the gateway container; connects via localhost.
 # ==============================================================================
-launcher:
-  token: ""
+client:
+  image:
+    repository: "software-park/picoclaw-client"
+    tag: "33ae9bf"
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+      # - name: my-registry-secret
+
+  port: 3000
+
+  # -- Gateway token for PICOCLAW_GATEWAY_TOKEN (stored in a Kubernetes Secret).
+  gatewayToken: ""
+
+  extraEnv: []
+    # - name: SOME_VAR
+    #   value: "some-value"
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 64Mi
+    # requests:
+    #   cpu: 50m
+    #   memory: 32Mi
 
 # ==============================================================================
 # Extra environment variables injected into the gateway pod.

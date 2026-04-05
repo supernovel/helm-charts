@@ -86,18 +86,39 @@ Secret name for config.json ConfigMap.
 {{- end }}
 
 {{/*
+Secret name for the client gateway token (PICOCLAW_GATEWAY_TOKEN).
+*/}}
+{{- define "picoclaw.clientSecretName" -}}
+{{- include "picoclaw.fullname" . }}-client
+{{- end }}
+
+{{/*
+Resolve the gateway token for the picoclaw-client sidecar.
+Priority:
+  1. .Values.client.gatewayToken if explicitly set
+  2. Existing Secret value (persists across upgrades)
+  3. Deterministic fallback derived from release identity (stable across re-renders)
+*/}}
+{{- define "picoclaw.resolvedGatewayToken" -}}
+{{- if .Values.client.gatewayToken -}}
+{{- .Values.client.gatewayToken -}}
+{{- else -}}
+{{- $secretName := include "picoclaw.clientSecretName" . -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secretName -}}
+{{- if and $existing $existing.data (index $existing.data "gateway-token") -}}
+{{- index $existing.data "gateway-token" | b64dec -}}
+{{- else -}}
+{{- printf "pico-%s" (printf "%s.%s" .Release.Name .Release.Namespace | sha256sum | trunc 32) -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Secret name for .security.yml (model api_keys).
 Ref: https://docs.picoclaw.io/docs/configuration/config-reference#security-configuration
 */}}
 {{- define "picoclaw.securitySecretName" -}}
 {{- include "picoclaw.fullname" . }}-security
-{{- end }}
-
-{{/*
-Secret name for the launcher token (PICOCLAW_LAUNCHER_TOKEN).
-*/}}
-{{- define "picoclaw.launcherSecretName" -}}
-{{- include "picoclaw.fullname" . }}-launcher
 {{- end }}
 
 {{/*
@@ -143,6 +164,12 @@ channels:
     app_token: {{ $ch.slack.appToken | quote }}
     {{- end }}
   {{- end }}
+  pico:
+    token: {{ include "picoclaw.resolvedGatewayToken" . | quote }}
+{{- else }}
+channels:
+  pico:
+    token: {{ include "picoclaw.resolvedGatewayToken" . | quote }}
 {{- end }}
 
 {{- $web := $cfg.tools.web }}
@@ -204,6 +231,9 @@ Ref: https://docs.picoclaw.io/docs/configuration/config-reference
     },
     "slack": {
       "enabled": {{ $channels.slack.enabled }}
+    },
+    "pico": {
+      "enabled": true
     }
   },
   "tools": {
