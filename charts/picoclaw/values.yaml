@@ -162,7 +162,7 @@ serviceAccount:
 client:
   image:
     repository: "software-park/picoclaw-client"
-    tag: "33ae9bf"
+    tag: "ba0a73b"
     pullPolicy: IfNotPresent
 
   port: 3000
