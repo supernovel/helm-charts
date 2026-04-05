@@ -50,6 +50,28 @@ spec:
       #                      the ConfigMap/Secret is always the source of truth.
       # ---------------------------------------------------------------------------
       initContainers:
+        # Seed default files from the image into the persistent volume on first
+        # run. Uses cp -rn so existing files are never overwritten.
+        - name: image-seed
+          image: "{{ .Values.image.repository }}:{{ include "picoclaw.imageTag" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              if [ -d /home/picoclaw/.picoclaw/workspace ]; then
+                echo "image-seed: copying default workspace files (no-overwrite)"
+                cp -rn /home/picoclaw/.picoclaw/workspace/. /mnt/workspace/
+              else
+                echo "image-seed: source workspace not found, skipping"
+              fi
+              echo "image-seed done"
+          volumeMounts:
+            - name: data
+              mountPath: /mnt/workspace
+              subPath: workspace
+
         - name: config-init
           image: "alpine:3.19"
           imagePullPolicy: IfNotPresent
@@ -60,17 +82,17 @@ spec:
               set -e
               {{- if eq .Values.config.syncMode "always" }}
               echo "syncMode=always: overwriting config files from Helm values"
-              cp /tmp/config-tpl/config.json /home/picoclaw/.picoclaw/config.json
-              cp /tmp/security-tpl/.security.yml /home/picoclaw/.picoclaw/.security.yml
+              cp /tmp/config-tpl/config.json /mnt/picoclaw/config.json
+              cp /tmp/security-tpl/.security.yml /mnt/picoclaw/.security.yml
               {{- else }}
               echo "syncMode=init: seeding config files only if absent"
-              [ -f /home/picoclaw/.picoclaw/config.json ] || cp /tmp/config-tpl/config.json /home/picoclaw/.picoclaw/config.json
-              [ -f /home/picoclaw/.picoclaw/.security.yml ] || cp /tmp/security-tpl/.security.yml /home/picoclaw/.picoclaw/.security.yml
+              [ -f /mnt/picoclaw/config.json ] || cp /tmp/config-tpl/config.json /mnt/picoclaw/config.json
+              [ -f /mnt/picoclaw/.security.yml ] || cp /tmp/security-tpl/.security.yml /mnt/picoclaw/.security.yml
               {{- end }}
               echo "config-init done"
           volumeMounts:
             - name: data
-              mountPath: /home/picoclaw/.picoclaw
+              mountPath: /mnt/picoclaw
               subPath: home
             - name: config-tpl
               mountPath: /tmp/config-tpl
