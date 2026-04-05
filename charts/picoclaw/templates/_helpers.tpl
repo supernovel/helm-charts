@@ -137,6 +137,7 @@ Ref: https://docs.picoclaw.io/docs/credential-encryption
     "defaults": {
       "workspace": {{ $cfg.agents.defaults.workspace | quote }},
       "restrict_to_workspace": {{ $cfg.agents.defaults.restrictToWorkspace }},
+      "allow_read_outside_workspace": {{ $cfg.agents.defaults.allowReadOutsideWorkspace }},
       "model_name": {{ $cfg.agents.defaults.modelName | quote }},
       "max_tokens": {{ $cfg.agents.defaults.maxTokens }},
       "max_tool_iterations": {{ $cfg.agents.defaults.maxToolIterations }}
@@ -212,14 +213,47 @@ Ref: https://docs.picoclaw.io/docs/credential-encryption
         {{- end }}
       }
     },
+    "web_fetch": {
+      "enabled": true
+    },
     "mcp": {
       "enabled": {{ $cfg.tools.mcp.enabled }}
     },
     "cron": {
+      "enabled": true,
       "exec_timeout_minutes": {{ $cfg.tools.cron.execTimeoutMinutes }}
     },
     "exec": {
+      "enabled": true,
+      "enable_deny_patterns": true,
       "enable_deny_patterns": {{ $cfg.tools.exec.enableDenyPatterns }}
+    },
+    "read_file": {
+      "enabled": true
+    },
+    "load_image": {
+      "enabled": true
+    },
+    "append_file": {
+      "enabled": true
+    },
+    "edit_file": {
+      "enabled": true
+    },
+    "find_skills": {
+      "enabled": true
+    },
+    "install_skill": {
+      "enabled": true
+    },
+    "list_dir": {
+      "enabled": true
+    },
+    "spawn": {
+      "enabled": true
+    },
+    "spawn_status": {
+      "enabled": true
     }
   },
   "heartbeat": {

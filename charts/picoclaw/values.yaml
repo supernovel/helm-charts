@@ -42,7 +42,8 @@ config:
   agents:
     defaults:
       workspace: "/home/picoclaw/.picoclaw/workspace"
-      restrictToWorkspace: false
+      restrictToWorkspace: true
+      allowReadOutsideWorkspace: false
       modelName: "default-model"
       maxTokens: 32768
       maxToolIterations: 50
