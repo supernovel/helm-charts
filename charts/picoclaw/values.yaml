@@ -41,7 +41,7 @@ config:
   # -- Agent default settings
   agents:
     defaults:
-      workspace: "/data/workspace"
+      workspace: "/home/picoclaw/.picoclaw/workspace"
       restrictToWorkspace: false
       modelName: "default-model"
       maxTokens: 32768
