@@ -97,7 +97,10 @@ config:
     cron:
       execTimeoutMinutes: 5
     exec:
+      allowRemote: true
       enableDenyPatterns: true
+      customDenyPatterns: []
+      customAllowPatterns: []
 
   # -- Heartbeat periodic task
   heartbeat:

@@ -225,8 +225,10 @@ Ref: https://docs.picoclaw.io/docs/credential-encryption
     },
     "exec": {
       "enabled": true,
-      "enable_deny_patterns": true,
-      "enable_deny_patterns": {{ $cfg.tools.exec.enableDenyPatterns }}
+      "allow_remote": {{ $cfg.tools.exec.allowRemote }},
+      "enable_deny_patterns": {{ $cfg.tools.exec.enableDenyPatterns }},
+      "custom_deny_patterns": {{ $cfg.tools.exec.customDenyPatterns | toJson }},
+      "custom_allow_patterns": {{ $cfg.tools.exec.customAllowPatterns | toJson }}
     },
     "read_file": {
       "enabled": true
