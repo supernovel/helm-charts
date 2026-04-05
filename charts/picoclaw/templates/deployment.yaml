@@ -158,7 +158,7 @@ spec:
             - name: PICOCLAW_DATA_DIR
               value: "/data"
             - name: PICOCLAW_CONFIG
-              value: "/picoclaw/picoclaw.config.json"
+              value: "/picoclaw/config.json"
             - name: PICOCLAW_WORKSPACE_DIR
               value: "/picoclaw/workspace"
             {{- with .Values.client.extraEnv }}
@@ -175,6 +175,9 @@ spec:
             - name: data
               mountPath: /picoclaw
               subPath: home
+            - name: data
+              mountPath: /picoclaw/workspace
+              subPath: workspace
 
       volumes:
         # ConfigMap template — read by init container only
