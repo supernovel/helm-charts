@@ -60,17 +60,17 @@ spec:
               set -e
               {{- if eq .Values.config.syncMode "always" }}
               echo "syncMode=always: overwriting config files from Helm values"
-              cp /tmp/config-tpl/config.json /root/.picoclaw/config.json
-              cp /tmp/security-tpl/.security.yml /root/.picoclaw/.security.yml
+              cp /tmp/config-tpl/config.json /home/picoclaw/.picoclaw/config.json
+              cp /tmp/security-tpl/.security.yml /home/picoclaw/.picoclaw/.security.yml
               {{- else }}
               echo "syncMode=init: seeding config files only if absent"
-              [ -f /root/.picoclaw/config.json ] || cp /tmp/config-tpl/config.json /root/.picoclaw/config.json
-              [ -f /root/.picoclaw/.security.yml ] || cp /tmp/security-tpl/.security.yml /root/.picoclaw/.security.yml
+              [ -f /home/picoclaw/.picoclaw/config.json ] || cp /tmp/config-tpl/config.json /home/picoclaw/.picoclaw/config.json
+              [ -f /home/picoclaw/.picoclaw/.security.yml ] || cp /tmp/security-tpl/.security.yml /home/picoclaw/.picoclaw/.security.yml
               {{- end }}
               echo "config-init done"
           volumeMounts:
             - name: data
-              mountPath: /root/.picoclaw
+              mountPath: /home/picoclaw/.picoclaw
               subPath: home
             - name: config-tpl
               mountPath: /tmp/config-tpl
@@ -101,16 +101,16 @@ spec:
             periodSeconds: 10
           env:
             - name: PICOCLAW_HOME
-              value: "/root/.picoclaw"
+              value: "/home/picoclaw/.picoclaw"
             - name: PICOCLAW_CONFIG
-              value: "/root/.picoclaw/config.json"
+              value: "/home/picoclaw/.picoclaw/config.json"
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
             # Persistent home dir — config.json and .security.yml live here
             - name: data
-              mountPath: /root/.picoclaw
+              mountPath: /home/picoclaw/.picoclaw
               subPath: home
             # Persistent workspace — sessions, memory, cron, etc.
             - name: data

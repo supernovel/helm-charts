@@ -106,7 +106,7 @@ config:
 # ==============================================================================
 # Persistent Volume
 # A single PVC is used, with subPaths to separate concerns:
-#   subPath: home      → /root/.picoclaw  (config.json, .security.yml, etc.)
+#   subPath: home      → /home/picoclaw/.picoclaw  (config.json, .security.yml, etc.)
 #   subPath: workspace → /data/workspace  (sessions, memory, cron jobs)
 # ==============================================================================
 persistence:
@@ -138,12 +138,17 @@ affinity: {}
 podAnnotations: {}
 podLabels: {}
 
-podSecurityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
   # fsGroup: 2000
 
-securityContext: {}
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
   # readOnlyRootFilesystem: true
 
 # ==============================================================================
