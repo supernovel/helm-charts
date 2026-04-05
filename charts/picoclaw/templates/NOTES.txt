@@ -6,28 +6,29 @@ Namespace: {{ .Release.Namespace }}
 Gateway is listening on port {{ .Values.config.gateway.port }}.
 PicoClaw Client is listening on port {{ .Values.client.port }}.
 
-{{- if .Values.httpRoute.enabled }}
+{{- if .Values.client.httpRoute.enabled }}
 
 Client is accessible via HTTPRoute:
-{{- range .Values.httpRoute.hostnames }}
+{{- range .Values.client.httpRoute.hostnames }}
   http://{{ . }}/
 {{- end }}
 
 {{- else }}
 
 HTTPRoute is disabled. To expose the client enable httpRoute in values.yaml:
-  httpRoute:
-    enabled: true
-    parentRefs:
-      - name: gateway
-        sectionName: http
-    hostnames:
-      - picoclaw.example.com
-    rules:
-      - matches:
-          - path:
-              type: PathPrefix
-              value: /
+  client:
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: gateway
+          sectionName: http
+      hostnames:
+        - picoclaw.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
 
 {{- end }}
 

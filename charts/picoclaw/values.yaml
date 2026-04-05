@@ -118,26 +118,6 @@ persistence:
   existingClaim: ""
 
 # ==============================================================================
-# Gateway API HTTPRoute — needed for webhook-based channels
-# (Feishu, DingTalk, WeCom, LINE) and/or general external access.
-# Requires: Gateway API CRDs and a compatible Gateway controller.
-# ==============================================================================
-httpRoute:
-  enabled: false
-  annotations: {}
-  parentRefs:
-    - name: gateway
-      sectionName: http
-      # namespace: default
-  hostnames:
-    - picoclaw.example.com
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-
-# ==============================================================================
 # Resource limits
 # ==============================================================================
 resources: {}
@@ -184,10 +164,30 @@ client:
     repository: "software-park/picoclaw-client"
     tag: "33ae9bf"
     pullPolicy: IfNotPresent
-    pullSecrets: []
-      # - name: my-registry-secret
+
+  imagePullSecrets: []
+    # - name: my-registry-secret
 
   port: 3000
+
+  # ==============================================================================
+  # Gateway API HTTPRoute — exposes the client externally.
+  # Requires: Gateway API CRDs and a compatible Gateway controller.
+  # ==============================================================================
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        sectionName: http
+        # namespace: default
+    hostnames:
+      - picoclaw.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
 
   # -- Gateway token for PICOCLAW_GATEWAY_TOKEN (stored in a Kubernetes Secret).
   gatewayToken: ""

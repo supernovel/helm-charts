@@ -131,7 +131,7 @@ spec:
         - name: picoclaw-client
           image: "{{ .Values.client.image.repository }}:{{ .Values.client.image.tag }}"
           imagePullPolicy: {{ .Values.client.image.pullPolicy }}
-          {{- with .Values.client.image.pullSecrets }}
+          {{- with .Values.client.imagePullSecrets }}
           imagePullSecrets:
             {{- toYaml . | nindent 12 }}
           {{- end }}

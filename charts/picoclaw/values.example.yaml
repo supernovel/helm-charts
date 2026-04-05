@@ -47,29 +47,28 @@ client:
     repository: "software-park/picoclaw-client"
     tag: "33ae9bf"
     pullPolicy: IfNotPresent
-    pullSecrets:
-      - name: my-registry-secret
+  imagePullSecrets:
+    - name: my-registry-secret
   port: 3000
   gatewayToken: ""  # auto-generated if empty
+  httpRoute:
+    enabled: true
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        sectionName: http
+        # namespace: default
+    hostnames:
+      - picoclaw.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
 
 persistence:
   enabled: true
   size: "2Gi"
-
-httpRoute:
-  enabled: true
-  annotations: {}
-  parentRefs:
-    - name: gateway
-      sectionName: http
-      # namespace: default
-  hostnames:
-    - picoclaw.example.com
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
 
 resources:
   limits:
