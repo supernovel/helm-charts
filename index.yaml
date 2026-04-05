@@ -730,6 +730,29 @@ entries:
   picoclaw:
   - apiVersion: v2
     appVersion: v0.2.5
+    created: "2026-04-05T09:08:28.44145297Z"
+    description: 'PicoClaw — Ultra-lightweight AI assistant gateway in Go. Connects
+      to Telegram, Discord, Slack and Web client. Ref: https://docs.picoclaw.io/ '
+    digest: b964362f4ebff1df5e47cd7f7e8e57958c0291577ed3a094a86c8bb6427783c6
+    home: https://docs.picoclaw.io/
+    keywords:
+    - picoclaw
+    - ai
+    - chatbot
+    - gateway
+    - llm
+    maintainers:
+    - name: sipeed
+      url: https://github.com/sipeed
+    name: picoclaw
+    sources:
+    - https://github.com/sipeed/picoclaw
+    type: application
+    urls:
+    - https://github.com/supernovel/helm-charts/releases/download/picoclaw-0.2.6/picoclaw-0.2.6.tgz
+    version: 0.2.6
+  - apiVersion: v2
+    appVersion: v0.2.5
     created: "2026-04-05T09:01:53.203718545Z"
     description: 'PicoClaw — Ultra-lightweight AI assistant gateway in Go. Connects
       to Telegram, Discord, Slack and Web client. Ref: https://docs.picoclaw.io/ '
@@ -1172,4 +1195,4 @@ entries:
     urls:
     - https://github.com/supernovel/helm-charts/releases/download/supabase-0.1.3/supabase-0.1.3.tgz
     version: 0.1.3
-generated: "2026-04-05T09:01:53.203875708Z"
+generated: "2026-04-05T09:08:28.441587383Z"
