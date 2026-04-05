@@ -13,7 +13,7 @@ fullnameOverride: ""
 
 image:
   repository: "ghcr.io/sipeed/picoclaw"
-  tag: "v0.2.5"  # Defaults to appVersion in Chart.yaml
+  tag: "latest"  # Defaults to appVersion in Chart.yaml
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -171,7 +171,7 @@ serviceAccount:
 client:
   image:
     repository: "software-park/picoclaw-client"
-    tag: "8d0ba35"
+    tag: "latest"
     pullPolicy: IfNotPresent
 
   port: 3000
