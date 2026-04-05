@@ -41,18 +41,18 @@ spec:
       {{- end }}
 
       # ---------------------------------------------------------------------------
-      # Init container: seeds config.json and .security.yml into the persistent
-      # home volume so manual edits survive pod restarts.
+      # Init container: seeds workspace files from the image and config files
+      # from Helm values into the persistent volume.
       #
-      # syncMode: "init"   — copy only if the file does not yet exist (default)
+      # Workspace seeding: runs once — skipped if .seeded sentinel file exists.
+      #
+      # syncMode: "init"   — copy config only if the file does not yet exist (default)
       #                      manual edits made inside the pod are preserved.
-      # syncMode: "always" — always overwrite from Helm values on every start.
+      # syncMode: "always" — always overwrite config from Helm values on every start.
       #                      the ConfigMap/Secret is always the source of truth.
       # ---------------------------------------------------------------------------
       initContainers:
-        # Seed default files from the image into the persistent volume on first
-        # run. Uses cp -rn so existing files are never overwritten.
-        - name: image-seed
+        - name: init
           image: "{{ .Values.image.repository }}:{{ include "picoclaw.imageTag" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
@@ -60,37 +60,32 @@ spec:
             - -c
             - |
               set -e
-              if [ -d /home/picoclaw/.picoclaw/workspace ]; then
-                echo "image-seed: copying default workspace files (no-overwrite)"
-                cp -rn /home/picoclaw/.picoclaw/workspace/. /mnt/workspace/
+              # --- workspace seed (once) ---
+              if [ -f /mnt/workspace/.seeded ]; then
+                echo "init: workspace already seeded, skipping"
+              elif [ -d /home/picoclaw/.picoclaw/workspace ]; then
+                echo "init: seeding workspace files"
+                cp -r /home/picoclaw/.picoclaw/workspace/. /mnt/workspace/
+                touch /mnt/workspace/.seeded
+                echo "init: workspace seeded"
               else
-                echo "image-seed: source workspace not found, skipping"
+                echo "init: source workspace not found, skipping"
               fi
-              echo "image-seed done"
+              # --- config seed ---
+              {{- if eq .Values.config.syncMode "always" }}
+              echo "init: syncMode=always, overwriting config files"
+              cp /tmp/config-tpl/config.json /mnt/picoclaw/config.json
+              cp /tmp/security-tpl/.security.yml /mnt/picoclaw/.security.yml
+              {{- else }}
+              echo "init: syncMode=init, seeding config files only if absent"
+              [ -f /mnt/picoclaw/config.json ] || cp /tmp/config-tpl/config.json /mnt/picoclaw/config.json
+              [ -f /mnt/picoclaw/.security.yml ] || cp /tmp/security-tpl/.security.yml /mnt/picoclaw/.security.yml
+              {{- end }}
+              echo "init done"
           volumeMounts:
             - name: data
               mountPath: /mnt/workspace
               subPath: workspace
-
-        - name: config-init
-          image: "alpine:3.19"
-          imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - |
-              set -e
-              {{- if eq .Values.config.syncMode "always" }}
-              echo "syncMode=always: overwriting config files from Helm values"
-              cp /tmp/config-tpl/config.json /mnt/picoclaw/config.json
-              cp /tmp/security-tpl/.security.yml /mnt/picoclaw/.security.yml
-              {{- else }}
-              echo "syncMode=init: seeding config files only if absent"
-              [ -f /mnt/picoclaw/config.json ] || cp /tmp/config-tpl/config.json /mnt/picoclaw/config.json
-              [ -f /mnt/picoclaw/.security.yml ] || cp /tmp/security-tpl/.security.yml /mnt/picoclaw/.security.yml
-              {{- end }}
-              echo "config-init done"
-          volumeMounts:
             - name: data
               mountPath: /mnt/picoclaw
               subPath: home
