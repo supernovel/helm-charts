@@ -45,10 +45,8 @@ config:
 client:
   image:
     repository: "software-park/picoclaw-client"
-    tag: "33ae9bf"
+    tag: "ba0a73b"
     pullPolicy: IfNotPresent
-  imagePullSecrets:
-    - name: my-registry-secret
   port: 3000
   gatewayToken: ""  # auto-generated if empty
   httpRoute:

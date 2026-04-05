@@ -121,78 +121,13 @@ Ref: https://docs.picoclaw.io/docs/configuration/config-reference#security-confi
 {{- include "picoclaw.fullname" . }}-security
 {{- end }}
 
-{{/*
-Render .security.yml — all sensitive credentials in one place.
-picoclaw deep-merges this file into config at startup (config.json wins on conflict).
 
-Sections:
-  model_list   — api_keys per model (keyed by model_name)
-  channels     — telegram / discord / slack tokens
-  tools.web    — brave / perplexity api_keys
-
-Ref: https://docs.picoclaw.io/docs/credential-encryption
-*/}}
-{{- define "picoclaw.securityYaml" -}}
-{{- $cfg := .Values.config }}
-model_list:
-{{- range $m := $cfg.modelList }}
-{{- if $m.apiKey }}
-  {{ $m.modelName }}:
-    api_keys:
-      - {{ $m.apiKey | quote }}
-{{- end }}
-{{- end }}
-
-{{- $ch := $cfg.channels }}
-{{- $hasChannels := or $ch.telegram.token $ch.discord.token $ch.slack.botToken $ch.slack.appToken }}
-{{- if $hasChannels }}
-channels:
-  {{- if $ch.telegram.token }}
-  telegram:
-    token: {{ $ch.telegram.token | quote }}
-  {{- end }}
-  {{- if $ch.discord.token }}
-  discord:
-    token: {{ $ch.discord.token | quote }}
-  {{- end }}
-  {{- if or $ch.slack.botToken $ch.slack.appToken }}
-  slack:
-    {{- if $ch.slack.botToken }}
-    bot_token: {{ $ch.slack.botToken | quote }}
-    {{- end }}
-    {{- if $ch.slack.appToken }}
-    app_token: {{ $ch.slack.appToken | quote }}
-    {{- end }}
-  {{- end }}
-  pico:
-    token: {{ include "picoclaw.resolvedGatewayToken" . | quote }}
-{{- else }}
-channels:
-  pico:
-    token: {{ include "picoclaw.resolvedGatewayToken" . | quote }}
-{{- end }}
-
-{{- $web := $cfg.tools.web }}
-{{- $hasTools := or $web.brave.apiKey $web.perplexity.apiKey }}
-{{- if $hasTools }}
-tools:
-  web:
-    {{- if $web.brave.apiKey }}
-    brave:
-      api_key: {{ $web.brave.apiKey | quote }}
-    {{- end }}
-    {{- if $web.perplexity.apiKey }}
-    perplexity:
-      api_key: {{ $web.perplexity.apiKey | quote }}
-    {{- end }}
-{{- end }}
-{{- end }}
 
 {{/*
 Render config.json as JSON from values.
-api_key fields are intentionally omitted here — they are provided via
-.security.yml (secret.yaml) which picoclaw merges at startup.
-Ref: https://docs.picoclaw.io/docs/configuration/config-reference
+api_key fields use file:// references — picoclaw reads the actual value from
+the named file in the same directory as config.json at startup.
+Ref: https://docs.picoclaw.io/docs/credential-encryption
 */}}
 {{- define "picoclaw.configJson" -}}
 {{- $cfg := .Values.config }}
@@ -216,6 +151,9 @@ Ref: https://docs.picoclaw.io/docs/configuration/config-reference
       {{- if $m.apiBase }},
       "api_base": {{ $m.apiBase | quote }}
       {{- end }}
+      {{- if $m.apiKey }},
+      "api_key": {{ printf "file://%s.key" $m.modelName | quote }}
+      {{- end }}
       {{- if $m.requestTimeout }},
       "request_timeout": {{ $m.requestTimeout }}
       {{- end }}
@@ -226,18 +164,31 @@ Ref: https://docs.picoclaw.io/docs/configuration/config-reference
     "telegram": {
       "enabled": {{ $channels.telegram.enabled }},
       "allow_from": []
+      {{- if $channels.telegram.token }},
+      "token": "file://telegram.token"
+      {{- end }}
     },
     "discord": {
       "enabled": {{ $channels.discord.enabled }},
       "allow_from": []
+      {{- if $channels.discord.token }},
+      "token": "file://discord.token"
+      {{- end }}
     },
     "slack": {
       "enabled": {{ $channels.slack.enabled }},
       "allow_from": []
+      {{- if $channels.slack.botToken }},
+      "bot_token": "file://slack-bot.token"
+      {{- end }}
+      {{- if $channels.slack.appToken }},
+      "app_token": "file://slack-app.token"
+      {{- end }}
     },
     "pico": {
       "enabled": true,
-      "allow_from": []
+      "allow_from": [],
+      "token": "file://pico.token"
     }
   },
   "tools": {
@@ -249,10 +200,16 @@ Ref: https://docs.picoclaw.io/docs/configuration/config-reference
       "brave": {
         "enabled": {{ $cfg.tools.web.brave.enabled }},
         "max_results": {{ $cfg.tools.web.brave.maxResults }}
+        {{- if $cfg.tools.web.brave.apiKey }},
+        "api_key": "file://brave.key"
+        {{- end }}
       },
       "perplexity": {
         "enabled": {{ $cfg.tools.web.perplexity.enabled }},
         "max_results": {{ $cfg.tools.web.perplexity.maxResults }}
+        {{- if $cfg.tools.web.perplexity.apiKey }},
+        "api_key": "file://perplexity.key"
+        {{- end }}
       }
     },
     "mcp": {

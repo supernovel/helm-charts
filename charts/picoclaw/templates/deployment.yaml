@@ -73,14 +73,14 @@ spec:
               fi
               # --- config seed ---
               {{- if eq .Values.config.syncMode "always" }}
-              echo "init: syncMode=always, overwriting config files"
+              echo "init: syncMode=always, overwriting config.json"
               cp /tmp/config-tpl/config.json /mnt/picoclaw/config.json
-              cp /tmp/security-tpl/.security.yml /mnt/picoclaw/.security.yml
               {{- else }}
-              echo "init: syncMode=init, seeding config files only if absent"
+              echo "init: syncMode=init, seeding config.json only if absent"
               [ -f /mnt/picoclaw/config.json ] || cp /tmp/config-tpl/config.json /mnt/picoclaw/config.json
-              [ -f /mnt/picoclaw/.security.yml ] || cp /tmp/security-tpl/.security.yml /mnt/picoclaw/.security.yml
               {{- end }}
+              # credential files (*.key, *.token) are always refreshed from the Secret
+              find /tmp/security-tpl -maxdepth 1 \( -name '*.key' -o -name '*.token' \) -exec cp {} /mnt/picoclaw/ \;
               echo "init done"
           volumeMounts:
             - name: data
@@ -125,7 +125,7 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
-            # Persistent home dir — config.json and .security.yml live here
+            # Persistent home dir — config.json and credential files live here
             - name: data
               mountPath: /home/picoclaw/.picoclaw
               subPath: home
@@ -201,13 +201,10 @@ spec:
         - name: config-tpl
           configMap:
             name: {{ include "picoclaw.configMapName" . }}
-        # Security secret template — read by init container only
+        # Credential files — read by init container, copied to ~/.picoclaw/
         - name: security-tpl
           secret:
             secretName: {{ include "picoclaw.securitySecretName" . }}
-            items:
-              - key: .security.yml
-                path: .security.yml
         # Single persistent volume — subPath:home for ~/.picoclaw, subPath:workspace for agent data
         - name: data
           {{- if .Values.persistence.enabled }}
